@@ -220,6 +220,41 @@ download:
   skip_existing: true  # Skip files that already exist with matching checksum
 
 # =============================================================================
+# Data Validation Configuration
+# =============================================================================
+
+validation:
+  # Expected value ranges for key variables
+  # Values outside these ranges will be flagged (not removed)
+  ranges:
+    RIDAGEYR: [18, 80]      # Age in years (adults, top-coded at 80)
+    BMXBMI: [10, 80]        # BMI (kg/m²) - very low/high are flagged
+    BMXWT: [20, 300]        # Weight (kg)
+    BMXHT: [100, 220]       # Height (cm)
+    BMXWAIST: [40, 200]     # Waist circumference (cm)
+    LBXGH: [3, 20]          # HbA1c (%) - normal ~4-6, diabetes >6.5
+    LBXGLU: [30, 500]       # Fasting glucose (mg/dL)
+    BPXSY1: [50, 250]       # Systolic BP reading 1 (mmHg)
+    BPXSY2: [50, 250]       # Systolic BP reading 2
+    BPXSY3: [50, 250]       # Systolic BP reading 3
+    BPXDI1: [30, 150]       # Diastolic BP reading 1 (mmHg)
+    BPXDI2: [30, 150]       # Diastolic BP reading 2
+    BPXDI3: [30, 150]       # Diastolic BP reading 3
+    LBXTC: [50, 500]        # Total cholesterol (mg/dL)
+    LBDHDD: [10, 150]       # HDL cholesterol (mg/dL)
+    LBXTR: [20, 2000]       # Triglycerides (mg/dL)
+
+  # Special value codes in NHANES
+  special_values:
+    refused: [7, 77, 777, 7777, 77777]
+    dont_know: [9, 99, 999, 9999, 99999]
+
+  # Recode values for special codes
+  recode:
+    refused: -7
+    dont_know: -9
+
+# =============================================================================
 # Visualization Configuration
 # =============================================================================
 

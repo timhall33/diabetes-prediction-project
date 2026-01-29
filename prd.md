@@ -288,6 +288,13 @@ What we set out to accomplish
 
 **ASK USER**: Review missing data patterns and confirm imputation approach before implementation.
 
+> **IMPLEMENTATION NOTE (Phase 3 Complete)**: The actual implementation differs from above:
+> - We use median/mode imputation (not MICE) for simplicity and speed
+> - Two datasets created: "minimal" (impute <5% only, for tree models) and "full" (impute ≤50%, for linear/NN)
+> - Features with >50% missing are NOT imputed (too unreliable)
+> - "Refused" and "Don't Know" are preserved as distinct categories (-7, -9), not treated as missing
+> - See CHANGELOG.md Phase 3 for full details
+
 ### 3.2 Variable Harmonization
 **Objective**: Standardize variables across survey years
 
@@ -323,63 +330,94 @@ Create the following engineered features:
 **Calculated Features**:
 | Feature | Formula | Rationale |
 |---------|---------|-----------|
-| TOTAL_WATER | DR1_320Z + DR1_330Z + DR1BWATZ | Total water intake |
 | AVG_SYS_BP | mean(BPXSY1, BPXSY2, BPXSY3) | Average systolic BP |
 | AVG_DIA_BP | mean(BPXDI1, BPXDI2, BPXDI3) | Average diastolic BP |
-| ACR_RATIO | URXUMA / URXUCR | Albumin-creatinine ratio |
-| WEIGHT_CHANGE_10YR | BMXWT - (WHD110 * 0.453592) | Weight change from 10yrs ago |
-| WEIGHT_CHANGE_25 | BMXWT - (WHD120 * 0.453592) | Weight change from age 25 |
-| WEIGHT_FROM_MAX | (WHD140 * 0.453592) - BMXWT | Difference from heaviest |
-| WAKE_TIME_DIFF | SLQ330 - SLQ310 | Weekend vs weekday wake time |
+| TOTAL_WATER | DR1_320Z + DR1_330Z + DR1BWATZ | Total water intake |
+| ACR_RATIO | URXUMA / URXUCR | Albumin-creatinine ratio (kidney function) |
+| WEIGHT_CHANGE_10YR | BMXWT - (WHD110 * 0.453592) | Weight change from 10yrs ago (lbs→kg) |
+| WEIGHT_CHANGE_25 | BMXWT - (WHD120 * 0.453592) | Weight change from age 25 (lbs→kg) |
+| WEIGHT_FROM_MAX | (WHD140 * 0.453592) - BMXWT | Difference from heaviest (lbs→kg) |
+| WAKE_TIME_DIFF | SLQ330 - SLQ310 | Weekend vs weekday wake time difference |
+| WAIST_HEIGHT_RATIO | BMXWAIST / BMXHT | Waist-to-height ratio |
+| SAT_FAT_PCT | DR1TSFAT / DR1TTFAT * 100 | Saturated fat % of total fat |
 
-**Interaction Features** (consider):
+**Interaction Features** (consider for Phase 7):
 - BMI × Age
 - Physical activity × Sedentary time
 - Caloric intake × BMI
 - Family history × Age
 
-**Ratio Features**:
-- Waist-to-height ratio
-- Fat-to-protein intake ratio
-- Saturated fat percentage of total fat
+**Note**: WHD110, WHD120, WHD140 are in pounds; BMXWT is in kg. Conversion factor: 0.453592 kg/lb
 
 ### 4.2 Feature Categories
 Organize features into groups for analysis:
+
+> **IMPLEMENTATION NOTE**: ~95 base features defined below plus ~10 derived features.
+> Features with >50% missing in current dataset are marked with † - these may have better coverage when 1999-2018 data is added.
+> Additional features from raw dataset may be added later if needed.
 
 **Demographic** (2):
 - Age (RIDAGEYR), Gender (RIAGENDR)
 
 **Anthropometric** (4):
-- BMI, Weight, Height, Waist circumference
+- BMI (BMXBMI), Weight (BMXWT), Height (BMXHT), Waist circumference (BMXWAIST)
 
-**Blood Pressure** (2):
-- Average systolic, Average diastolic
+**Weight History** (4 raw + 3 derived):
+- Raw: Weight 10 yrs ago (WHD110), Weight at age 25 (WHD120), Greatest weight (WHD140), Age at heaviest (WHD130)†
+- Derived: WEIGHT_CHANGE_10YR, WEIGHT_CHANGE_25, WEIGHT_FROM_MAX
 
-**Dietary** (16):
-- Energy, Protein, Carbohydrates, Sugars, Fiber
-- Total/Saturated/Mono/Poly fats
-- Sodium, Caffeine, Alcohol, Water intake
+**Blood Pressure Exam** (6 raw → 2 derived):
+- Raw: BPXSY1/2/3, BPXDI1/2/3
+- Derived: AVG_SYS_BP, AVG_DIA_BP
+
+**Blood Pressure/Cholesterol Questionnaire** (5):
+- High BP told (BPQ020), Taking Rx for hypertension (BPQ040A)†
+- High cholesterol told (BPQ080), Told take Rx for cholesterol (BPQ090D), Now taking Rx (BPQ100D)†
+
+**Dietary - Nutrients** (15):
+- Energy (DR1TKCAL), Protein (DR1TPROT), Carbohydrates (DR1TCARB), Sugars (DR1TSUGR), Fiber (DR1TFIBE)
+- Total fat (DR1TTFAT), Saturated (DR1TSFAT), Mono (DR1TMFAT), Poly (DR1TPFAT)
+- Sodium (DR1TSODI), Caffeine (DR1TCAFF), Alcohol (DR1TALCO)
+- Water: Plain (DR1_320Z), Tap (DR1_330Z), Bottled (DR1BWATZ)
+
+**Dietary - Behavior** (4):
+- How healthy is diet (DBQ700), Meals not home prepared (DBD895)
+- Meals from fast food/pizza (DBD900), Milk consumption past 30 days (DBQ197)
 
 **Laboratory** (14):
-- Lipid panel: Total cholesterol, HDL, LDL, Triglycerides
-- Kidney function: Urine albumin, creatinine, ACR ratio, Serum creatinine
-- Liver function: ALT, AST, GGT
-- Blood count: WBC, Hematocrit, Hemoglobin, Platelets
+- Lipid panel: Total cholesterol (LBXTC), HDL (LBDHDD), LDL (LBDLDL)†, Triglycerides (LBXTR)†
+- Kidney function: Urine albumin (URXUMA), Urine creatinine (URXUCR), Serum creatinine (LBXSCR)
+- Liver function: ALT (LBXSATSI), AST (LBXSASSI), GGT (LBXSGTSI)
+- Blood count: WBC (LBXWBCSI), Hematocrit (LBXHCT), Hemoglobin (LBXHGB), Platelets (LBXPLTSI)
 
-**Lifestyle** (variable):
-- Alcohol consumption, Smoking history
-- Physical activity metrics
-- Sleep duration/patterns
-- Diet quality indicators
+**Lifestyle - Alcohol** (2):
+- Drinks/day (ALQ130), Frequency (ALQ121)† or (ALQ120Q)†
 
-**Medical History** (10+):
-- Hypertension, High cholesterol
-- Cardiovascular conditions
-- Family history of diabetes
-- Kidney conditions, Liver conditions
+**Lifestyle - Smoking** (3):
+- Ever smoked 100 cigs (SMQ020), Current status (SMQ040)†, Cigarettes/day (SMD650)†
 
-**Mental Health** (5):
-- Depression screener items
+**Lifestyle - Physical Activity** (6):
+- Vigorous work (PAQ605), Moderate work (PAQ620), Walk/bicycle (PAQ635)
+- Vigorous recreational (PAQ650), Moderate recreational (PAQ665), Sedentary min/day (PAD680)
+
+**Lifestyle - Sleep** (5 raw + 1 derived):
+- Raw: Weekday hours (SLD012), Weekend hours (SLD013)†, Sleep disorder (SLQ050)
+- Raw: Weekday wake time (SLQ310), Weekend wake time (SLQ330)†
+- Derived: WAKE_TIME_DIFF (weekend - weekday wake time)
+
+**Cardiovascular** (1):
+- Shortness of breath on stairs/inclines (CDQ010)
+
+**Medical History** (11):
+- CHF (MCQ160B), CHD (MCQ160C), Angina (MCQ160D), Heart attack (MCQ160E), Stroke (MCQ160F)
+- Family history diabetes (MCQ300C)
+- Liver condition (MCQ160L), Weak/failing kidneys (KIQ022)
+- Cancer/malignancy ever (MCQ220)
+
+**Mental Health - PHQ-9 Depression** (9):
+- DPQ010, DPQ020, DPQ030, DPQ040, DPQ050, DPQ060, DPQ070, DPQ080, DPQ090
+
+† = >50% missing in 2015-2018 data; may improve with full 1999-2018 dataset
 
 ### 4.3 Feature Preparation for Modeling
 
