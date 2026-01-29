@@ -1,0 +1,230 @@
+# =============================================================================
+# NHANES Diabetes Prediction Project - Configuration
+# =============================================================================
+
+# Project metadata
+project:
+  name: "nhanes-diabetes-prediction"
+  version: "0.1.0"
+  description: "Diabetes risk prediction using NHANES data"
+
+# =============================================================================
+# Data Configuration
+# =============================================================================
+
+data:
+  # Survey years to use (start with recent, expand later)
+  initial_years:
+    - "2015-2016"
+    - "2017-2018"
+
+  all_years:
+    - "1999-2000"
+    - "2001-2002"
+    - "2003-2004"
+    - "2005-2006"
+    - "2007-2008"
+    - "2009-2010"
+    - "2011-2012"
+    - "2013-2014"
+    - "2015-2016"
+    - "2017-2018"
+
+  # Paths (relative to project root)
+  paths:
+    raw: "data/raw"
+    interim: "data/interim"
+    processed: "data/processed"
+    models: "models"
+    reports: "reports"
+    figures: "reports/figures"
+
+  # NHANES data files to download per year
+  files:
+    demographics:
+      - prefix: "DEMO"
+        description: "Demographics & sample weights"
+
+    examination:
+      - prefix: "BMX"
+        description: "Body measures"
+      - prefix: "BPX"
+        description: "Blood pressure"
+
+    laboratory:
+      - prefix: "GHB"
+        description: "Glycohemoglobin (HbA1c)"
+      - prefix: "GLU"
+        description: "Plasma fasting glucose"
+      - prefix: "ALB_CR"
+        description: "Albumin & creatinine - urine"
+      - prefix: "TCHOL"
+        description: "Total cholesterol"
+      - prefix: "HDL"
+        description: "HDL cholesterol"
+      - prefix: "TRIGLY"
+        description: "Triglycerides & LDL"
+      - prefix: "CBC"
+        description: "Complete blood count"
+      - prefix: "BIOPRO"
+        description: "Biochemistry profile"
+
+    questionnaire:
+      - prefix: "DIQ"
+        description: "Diabetes questionnaire"
+      - prefix: "ALQ"
+        description: "Alcohol use"
+      - prefix: "BPQ"
+        description: "Blood pressure & cholesterol"
+      - prefix: "CDQ"
+        description: "Cardiovascular health"
+      - prefix: "DBQ"
+        description: "Diet behavior"
+      - prefix: "PAQ"
+        description: "Physical activity"
+      - prefix: "SLQ"
+        description: "Sleep"
+      - prefix: "SMQ"
+        description: "Smoking"
+      - prefix: "WHQ"
+        description: "Weight history"
+      - prefix: "MCQ"
+        description: "Medical conditions"
+      - prefix: "KIQ_U"
+        description: "Kidney conditions"
+      - prefix: "DPQ"
+        description: "Depression screener"
+
+    dietary:
+      - prefix: "DR1TOT"
+        description: "Dietary interview - Day 1 totals"
+
+# =============================================================================
+# Target Variable Configuration
+# =============================================================================
+
+target:
+  # Classification target: 3 classes
+  classification:
+    classes:
+      - name: "no_diabetes"
+        value: 0
+      - name: "prediabetes"
+        value: 1
+      - name: "diabetes"
+        value: 2
+
+  # Diagnostic thresholds (ADA guidelines)
+  thresholds:
+    hba1c:
+      diabetes: 6.5        # >= 6.5% indicates diabetes
+      prediabetes: 5.7     # 5.7-6.4% indicates prediabetes
+
+    fasting_glucose:
+      diabetes: 126        # >= 126 mg/dL indicates diabetes
+      prediabetes: 100     # 100-125 mg/dL indicates prediabetes
+
+  # NHANES variable names for target definition
+  variables:
+    self_reported_diabetes: "DIQ010"  # Doctor told you have diabetes
+    hba1c: "LBXGH"                    # Glycohemoglobin (%)
+    fasting_glucose: "LBXGLU"         # Fasting glucose (mg/dL)
+    taking_insulin: "DIQ070"          # Taking insulin now
+    taking_diabetes_pills: "DIQ050"   # Taking diabetes pills
+
+# =============================================================================
+# Study Population Configuration
+# =============================================================================
+
+population:
+  inclusion:
+    min_age: 18  # Adults only
+
+  exclusion:
+    pregnant: true  # Exclude pregnant participants (RIDEXPRG = 1)
+
+  # Variables for filtering
+  variables:
+    age: "RIDAGEYR"
+    pregnancy_status: "RIDEXPRG"
+
+# =============================================================================
+# Modeling Configuration
+# =============================================================================
+
+modeling:
+  # Random seed for reproducibility
+  random_seed: 42
+
+  # Data splitting
+  split:
+    test_size: 0.15
+    val_size: 0.15
+    stratify: true  # Stratify by target class
+
+  # Cross-validation
+  cv:
+    n_folds: 3  # Using 3 for faster iteration (can increase later)
+
+  # Feature sets
+  feature_sets:
+    - name: "with_labs"
+      description: "All features including laboratory values"
+      include_labs: true
+
+    - name: "without_labs"
+      description: "Exclude lab values (screening without blood tests)"
+      include_labs: false
+
+  # Class imbalance handling
+  class_imbalance:
+    strategy: "class_weight"  # Options: class_weight, oversample, undersample
+
+# =============================================================================
+# MLflow Configuration
+# =============================================================================
+
+mlflow:
+  experiment_name: "diabetes-prediction"
+  tracking_uri: "mlruns"  # Local tracking
+
+  # What to log
+  log:
+    params: true
+    metrics: true
+    artifacts: true
+    models: true
+
+# =============================================================================
+# Hyperparameter Tuning Configuration
+# =============================================================================
+
+tuning:
+  # Optuna settings
+  n_trials: 50  # Number of trials per model
+  timeout: 3600  # Max seconds per model (1 hour)
+
+  # Pruning
+  pruning:
+    enabled: true
+    warmup_steps: 5
+
+# =============================================================================
+# Visualization Configuration
+# =============================================================================
+
+visualization:
+  # Plot style
+  style: "seaborn-v0_8-whitegrid"
+
+  # Figure sizes (inches)
+  figure_sizes:
+    small: [6, 4]
+    medium: [10, 6]
+    large: [14, 8]
+
+  # Color palette
+  palette: "viridis"
+
+  # DPI for saved figures
+  dpi: 300
