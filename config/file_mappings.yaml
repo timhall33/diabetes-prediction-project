@@ -1,0 +1,207 @@
+# =============================================================================
+# NHANES File Mappings Configuration
+# =============================================================================
+# This file defines the mapping between logical file names and actual NHANES
+# file names, which vary by survey year.
+#
+# EXTENSIBILITY: To add older years (1999-2000, etc.), add entries to:
+# 1. year_suffixes - the letter suffix for that cycle
+# 2. year_overrides - any files with non-standard names (e.g., LAB10 for GHB)
+# =============================================================================
+
+# Base URL for NHANES data files
+base_url: "https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public"
+
+# URL pattern: {base_url}/{first_year}/DataFiles/{filename}.xpt
+# Example: https://wwwn.cdc.gov/Nchs/Data/Nhanes/Public/2017/DataFiles/DEMO_J.xpt
+
+# =============================================================================
+# Year Suffix Mappings
+# =============================================================================
+# Maps survey cycle to the suffix appended to file names
+# 1999-2000 has no suffix (empty string)
+
+year_suffixes:
+  "1999-2000": ""
+  "2001-2002": "_B"
+  "2003-2004": "_C"
+  "2005-2006": "_D"
+  "2007-2008": "_E"
+  "2009-2010": "_F"
+  "2011-2012": "_G"
+  "2013-2014": "_H"
+  "2015-2016": "_I"
+  "2017-2018": "_J"
+
+# Maps survey cycle to the first year (used in URL path)
+year_to_first_year:
+  "1999-2000": "1999"
+  "2001-2002": "2001"
+  "2003-2004": "2003"
+  "2005-2006": "2005"
+  "2007-2008": "2007"
+  "2009-2010": "2009"
+  "2011-2012": "2011"
+  "2013-2014": "2013"
+  "2015-2016": "2015"
+  "2017-2018": "2017"
+
+# =============================================================================
+# Standard File Definitions
+# =============================================================================
+# These are the logical file names used throughout the project.
+# The actual filename = prefix + year_suffix (e.g., DEMO + _J = DEMO_J)
+
+files:
+  # Demographics (required for all analyses)
+  demographics:
+    - id: "DEMO"
+      prefix: "DEMO"
+      description: "Demographics & sample weights"
+      required: true
+
+  # Examination data
+  examination:
+    - id: "BMX"
+      prefix: "BMX"
+      description: "Body measures (BMI, weight, height, waist)"
+      required: true
+    - id: "BPX"
+      prefix: "BPX"
+      description: "Blood pressure measurements"
+      required: true
+
+  # Laboratory data
+  laboratory:
+    - id: "GHB"
+      prefix: "GHB"
+      description: "Glycohemoglobin (HbA1c) - TARGET VARIABLE"
+      required: true
+    - id: "GLU"
+      prefix: "GLU"
+      description: "Plasma fasting glucose"
+      required: true
+    - id: "TCHOL"
+      prefix: "TCHOL"
+      description: "Total cholesterol"
+      required: false
+    - id: "HDL"
+      prefix: "HDL"
+      description: "HDL cholesterol"
+      required: false
+    - id: "TRIGLY"
+      prefix: "TRIGLY"
+      description: "Triglycerides & LDL cholesterol"
+      required: false
+    - id: "CBC"
+      prefix: "CBC"
+      description: "Complete blood count"
+      required: false
+    - id: "BIOPRO"
+      prefix: "BIOPRO"
+      description: "Standard biochemistry profile"
+      required: false
+    - id: "ALB_CR"
+      prefix: "ALB_CR"
+      description: "Albumin & creatinine (urine)"
+      required: false
+
+  # Questionnaire data
+  questionnaire:
+    - id: "DIQ"
+      prefix: "DIQ"
+      description: "Diabetes questionnaire - TARGET VARIABLE"
+      required: true
+    - id: "ALQ"
+      prefix: "ALQ"
+      description: "Alcohol use"
+      required: false
+    - id: "BPQ"
+      prefix: "BPQ"
+      description: "Blood pressure & cholesterol questionnaire"
+      required: false
+    - id: "CDQ"
+      prefix: "CDQ"
+      description: "Cardiovascular health"
+      required: false
+    - id: "DBQ"
+      prefix: "DBQ"
+      description: "Diet behavior & nutrition"
+      required: false
+    - id: "PAQ"
+      prefix: "PAQ"
+      description: "Physical activity"
+      required: false
+    - id: "SLQ"
+      prefix: "SLQ"
+      description: "Sleep disorders"
+      required: false
+    - id: "SMQ"
+      prefix: "SMQ"
+      description: "Smoking - cigarette use"
+      required: false
+    - id: "WHQ"
+      prefix: "WHQ"
+      description: "Weight history"
+      required: false
+    - id: "MCQ"
+      prefix: "MCQ"
+      description: "Medical conditions"
+      required: false
+    - id: "KIQ_U"
+      prefix: "KIQ_U"
+      description: "Kidney conditions - urology"
+      required: false
+    - id: "DPQ"
+      prefix: "DPQ"
+      description: "Mental health - depression screener"
+      required: false
+
+  # Dietary data
+  dietary:
+    - id: "DR1TOT"
+      prefix: "DR1TOT"
+      description: "Dietary interview - total nutrient intakes, day 1"
+      required: false
+
+# =============================================================================
+# Year-Specific Overrides
+# =============================================================================
+# Some years have different file names for the same data.
+# This section maps logical file IDs to actual file names for specific years.
+#
+# Format:
+#   year_overrides:
+#     "YEAR-RANGE":
+#       "LOGICAL_ID": "ACTUAL_FILENAME"  # or null if not available
+#
+# Example for 1999-2000 (to be added when expanding to all years):
+# year_overrides:
+#   "1999-2000":
+#     GHB: "LAB10"           # Glycohemoglobin is in LAB10
+#     GLU: "LAB10AM"         # Glucose is in LAB10AM
+#     TCHOL: "LAB13"         # Total cholesterol in LAB13 (combined with HDL)
+#     HDL: "LAB13"           # HDL also in LAB13
+#     TRIGLY: "LAB13AM"      # Triglycerides in LAB13AM
+#     CBC: "LAB25"           # Complete blood count
+#     BIOPRO: "LAB18"        # Biochemistry profile
+#     ALB_CR: null           # Not available for 1999-2000
+#     SLQ: null              # Sleep questionnaire not available
+
+year_overrides:
+  # Placeholder for future year-specific mappings
+  # Currently empty since 2015-2018 use standard naming
+  {}
+
+# =============================================================================
+# Files that may not exist for certain years
+# =============================================================================
+# Some questionnaires/labs were added in later survey cycles
+
+files_not_available:
+  "1999-2000":
+    - "SLQ"      # Sleep questionnaire added later
+    - "DPQ"      # Depression screener added later
+    - "ALB_CR"   # Albumin/creatinine format different
+  "2001-2002":
+    - "DPQ"      # Depression screener added later

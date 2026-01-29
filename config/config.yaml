@@ -210,6 +210,16 @@ tuning:
     warmup_steps: 5
 
 # =============================================================================
+# Download Configuration
+# =============================================================================
+
+download:
+  timeout: 60          # Request timeout in seconds
+  max_retries: 3       # Max retry attempts per file
+  backoff_factor: 2.0  # Exponential backoff multiplier
+  skip_existing: true  # Skip files that already exist with matching checksum
+
+# =============================================================================
 # Visualization Configuration
 # =============================================================================
 
