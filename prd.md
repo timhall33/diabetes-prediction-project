@@ -759,6 +759,12 @@ Update CHANGELOG.md after completing each phase or significant step. Include:
 - Use appropriate batch sizes for neural networks
 - Monitor memory usage with large datasets
 
+### Working Preferences
+- **Git commits**: No co-author line
+- **Explanations**: Explain reasoning for key decisions (learning-focused project)
+- **Checkpoints**: Ask before long-running operations or irreversible changes
+- **Environment**: Conda environment is `diabetes-ml`
+
 ---
 
 ## Success Criteria
