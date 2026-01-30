@@ -6,13 +6,22 @@ This document tracks the progress, decisions, and learnings throughout the NHANE
 
 **Environment**: `conda activate diabetes-ml`
 
-**Current Data Files** (in `data/interim/`):
+**Current Data Files**:
+
+*Interim* (`data/interim/`):
 | File | Shape | Description |
 |------|-------|-------------|
 | `study_population.parquet` | 11,723 × 832 | Raw merged data with target variable |
 | `cleaned_minimal_impute.parquet` | 11,723 × 1,562 | For LightGBM (NaN preserved ≥5% missing) |
 | `cleaned_full_impute.parquet` | 11,723 × 1,562 | For LogReg/NN (imputed ≤50% missing) |
-| `cleaning_report.json` | - | Audit trail of cleaning transformations |
+
+*Processed* (`data/processed/`):
+| File | Shape | Description |
+|------|-------|-------------|
+| `features_engineered.parquet` | 11,723 × 1,582 | All features + 20 derived |
+| `X_with_labs.parquet` | 11,698 × 171 | Modeling features (with labs) |
+| `X_without_labs.parquet` | 11,698 × 140 | Modeling features (no labs) |
+| `y_with_labs.parquet` | 11,698 × 1 | Target variable |
 
 **Key Constants** (defined in `src/data/cleaners.py`):
 ```python
@@ -33,8 +42,6 @@ MAX_MISSING_RATE = 0.50         # Full imputation: only ≤50% missing
 - ~95 base features + ~10 derived features
 - 11 features have >50% missing in 2015-2018 (marked † in PRD) - may improve with full dataset
 - Option to add more features from raw dataset later
-
-**Current Phase**: Completed Phase 3, ready for Phase 4 (Feature Engineering)
 
 ---
 
@@ -382,8 +389,121 @@ Clean and preprocess NHANES data with robust validation checks. Create two outpu
 
 ### Next Steps
 - **Phase 4**: Feature Engineering
-  - Create derived features (BP averages, weight change, ratios)
-  - Define feature sets (with_labs, without_labs)
-  - Prepare final modeling datasets
+
+---
+
+## [2026-01-30] - Phase 4: Feature Engineering
+
+### Objective
+Create derived features with clinical rationale, define feature sets (with/without labs), and prepare final modeling datasets.
+
+### Decisions Made
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Derived features** | 20 engineered features | Each based on clinical/scientific evidence for diabetes risk |
+| **Feature sets** | with_labs (109) + without_labs (92) | Enables comparison of screening with/without blood tests |
+| **Missing flags** | Include in modeling data | Missingness can be informative; increases to 171/140 total features |
+
+### Implementation
+
+**Files created:**
+- `src/features/builders.py` - Feature engineering functions with clinical documentation
+- `src/features/__init__.py` - Module exports
+- `notebooks/04_feature_engineering.ipynb` - Feature creation and validation notebook
+
+**Derived Features Created (20 total):**
+
+*Original Features:*
+| Feature | Formula | Clinical Rationale | N Valid |
+|---------|---------|-------------------|---------|
+| AVG_SYS_BP | mean(BPXSY1-3) | Multiple readings reduce white coat effect | 10,700 |
+| AVG_DIA_BP | mean(BPXDI1-3) | Multiple readings reduce variability | 10,700 |
+| TOTAL_WATER | sum(water cols) | Hydration affects glucose regulation | 10,138 |
+| ACR_RATIO | albumin/creatinine | Early kidney damage marker (diabetic nephropathy) | 10,757 |
+| WEIGHT_CHANGE_10YR | current - 10yr ago | Recent weight trajectory predicts risk | 7,569 |
+| WEIGHT_CHANGE_25 | current - age 25 | Lifetime weight gain from baseline | 8,900 |
+| WEIGHT_FROM_MAX | max - current | Weight loss from peak (intentional vs disease) | 10,830 |
+| WAKE_TIME_DIFF | weekend - weekday wake | Social jet lag disrupts metabolism | 5,714 |
+| WAIST_HEIGHT_RATIO | waist / height | Central obesity better than BMI for many | 10,435 |
+| SAT_FAT_PCT | sat_fat / total_fat | Dietary fat quality indicator | 10,134 |
+
+*Additional Features (added after review):*
+| Feature | Formula | Clinical Rationale | N Valid |
+|---------|---------|-------------------|---------|
+| PULSE_PRESSURE | SYS - DIA | Arterial stiffness marker; >60 = elevated risk | 10,700 |
+| MAP | (SYS + 2×DIA) / 3 | Mean arterial pressure; organ perfusion | 10,700 |
+| BP_VARIABILITY | std(BPXSY1-3) | Reading variability; independent CV risk | 10,610 |
+| CARB_FIBER_RATIO | carbs / fiber | Carb quality; >15 = poor | 10,048 |
+| SUGAR_CARB_RATIO | sugars / carbs | Simple vs complex carbs | 10,136 |
+| PHQ9_SCORE | sum(DPQ010-090) | Depression score; bidirectional diabetes link | 10,139 |
+| TG_HDL_RATIO | triglyc / HDL | Insulin resistance marker; >3.0 = elevated | 4,775 |
+| NON_HDL_CHOL | total - HDL | All atherogenic particles; better than LDL | 10,454 |
+| ANY_CVD | any(MCQ160B-F) | Cardiovascular history composite | 11,723 |
+| SLEEP_DURATION_DIFF | weekend - weekday hrs | Sleep debt pattern | 3,229 |
+
+### Results/Outcomes
+
+**Feature Sets Defined:**
+
+| Set | Base Features | With Missing Flags | Description |
+|-----|---------------|-------------------|-------------|
+| with_labs | 109 | 171 | All features including laboratory values |
+| without_labs | 92 | 140 | Excludes lab values (screening without blood draw) |
+
+**Output Files** (in `data/processed/`):
+| File | Shape | Description |
+|------|-------|-------------|
+| `features_engineered.parquet` | 11,723 × 1,582 | Full dataset with derived features |
+| `X_with_labs.parquet` | 11,698 × 171 | Features for models with labs |
+| `X_without_labs.parquet` | 11,698 × 140 | Features for models without labs |
+| `y_with_labs.parquet` | 11,698 × 1 | Target variable |
+| `feature_engineering_report.json` | - | Feature statistics |
+
+**Key Clinical Findings from Derived Features:**
+- Elevated pulse pressure (>60 mmHg): 30.1%
+- Hypertensive MAP (>100 mmHg): 16.8%
+- Poor carb quality (ratio >15): 52.4%
+- Moderate+ depression (PHQ9 ≥10): 8.6%
+- Insulin resistant (TG/HDL >3.0): 24.5%
+- High non-HDL cholesterol (≥160): 25.0%
+- Any CVD history: 11.3%
+
+**Target Distribution (preserved):**
+- No Diabetes (0): 48.6%
+- Prediabetes (1): 32.4%
+- Diabetes (2): 19.0%
+
+### Learnings
+
+1. **Wake time data format varies** - NHANES stores as "HH:MM" strings, not numeric HHMM. Required flexible parsing.
+
+2. **Weight history in pounds** - WHD110/120/140 are in lbs while BMXWT is kg. Conversion factor 0.453592 applied.
+
+3. **ACR ratio clinical thresholds**:
+   - <30 mg/g = Normal
+   - 30-299 = Microalbuminuria (early kidney damage)
+   - ≥300 = Macroalbuminuria (overt kidney disease)
+
+4. **Waist-height ratio rule**: "Keep waist less than half your height" (ratio <0.5). In our data, 73.9% exceed 0.5, indicating high-risk population.
+
+5. **Social jet lag**: Mean difference of ~1 hour between weekend/weekday wake times. 53% wake later on weekends.
+
+6. **Depression-diabetes link**: PHQ9 score added because depression increases diabetes risk 60% and diabetes doubles depression risk.
+
+7. **TG/HDL ratio as insulin resistance proxy**: 24.5% have ratio >3.0, indicating substantial insulin resistance in this population even before diabetes diagnosis.
+
+### Potential Additional Features (Future Work)
+
+- **Interaction features**: BMI × Age, Physical activity × Sedentary time
+- **Metabolic syndrome composite**: Count of: high BP, high TG, low HDL, high waist, high glucose
+- **Dietary quality scores**: Healthy Eating Index
+- **eGFR**: Estimated glomerular filtration rate from creatinine
+
+### Next Steps
+- **Phase 5**: Exploratory Data Analysis (EDA)
+  - Univariate/bivariate analysis
+  - Feature correlations
+  - Publication-quality visualizations
 
 ---

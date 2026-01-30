@@ -193,7 +193,7 @@ What we set out to accomplish
 | Questionnaire | MCQ | Medical conditions |
 | Questionnaire | KIQ_U | Kidney conditions |
 | Questionnaire | DPQ | Depression screener |
-| Questionnaire | RXQ_RX | Prescription medications |
+| Questionnaire | RXQ_RX | Prescription medications (deferred - not in initial download) |
 
 **Note**: File naming conventions vary by year. Create a mapping configuration.
 
@@ -203,7 +203,7 @@ What we set out to accomplish
 - Document units, valid ranges, and missing value codes
 - Note survey weight requirements for population-level inference
 
-**ASK USER**: Before proceeding with downloads, confirm the specific years and files needed. Ask if they want to start with a subset for faster iteration.
+**Decision**: Starting with 2015-2018 for faster iteration; will expand to 1999-2018 in Phase 7 when more data is needed.
 
 ---
 
@@ -269,31 +269,14 @@ What we set out to accomplish
 ### 3.1 Missing Data Strategy
 **Objective**: Systematically handle missing values
 
-**Approach**:
-1. **Distinguish missing types**:
-   - Structurally missing (variable not in survey year)
-   - Survey skip patterns (legitimate non-response)
-   - True missing (should have data but don't)
-
-2. **Missing analysis**:
-   - Calculate missing rates by variable
-   - Test MCAR vs MAR vs MNAR assumptions
-   - Visualize missing patterns (missingno package)
-
-3. **Imputation strategy**:
-   - For features with <5% missing: Simple imputation (median/mode)
-   - For features with 5-30% missing: Multiple imputation (MICE)
-   - For features with >30% missing: Consider dropping or special indicators
-   - Create missing indicator variables for potentially informative missingness
-
-**ASK USER**: Review missing data patterns and confirm imputation approach before implementation.
-
-> **IMPLEMENTATION NOTE (Phase 3 Complete)**: The actual implementation differs from above:
-> - We use median/mode imputation (not MICE) for simplicity and speed
-> - Two datasets created: "minimal" (impute <5% only, for tree models) and "full" (impute ≤50%, for linear/NN)
-> - Features with >50% missing are NOT imputed (too unreliable)
-> - "Refused" and "Don't Know" are preserved as distinct categories (-7, -9), not treated as missing
-> - See CHANGELOG.md Phase 3 for full details
+**Implemented Approach**:
+- Median/mode imputation (not MICE) for simplicity and speed
+- Two datasets created: "minimal" (impute <5% only, for tree models) and "full" (impute ≤50%, for linear/NN)
+- Features with >50% missing are NOT imputed (too unreliable)
+- "Refused" and "Don't Know" are preserved as distinct categories (-7, -9), not treated as missing
+- Missing indicator flags (`_MISSING` columns) created for features with ≥5% missing
+- Target-related columns (LBXGH, LBXGLU, DIQ010, DIQ050, DIQ070) are NEVER imputed
+- See CHANGELOG.md Phase 3 for full details
 
 ### 3.2 Variable Harmonization
 **Objective**: Standardize variables across survey years
@@ -325,21 +308,51 @@ Implement validation rules:
 ## Phase 4: Feature Engineering
 
 ### 4.1 Derived Features
-Create the following engineered features:
+Create the following engineered features (20 total):
 
-**Calculated Features**:
+**Blood Pressure Derived**:
 | Feature | Formula | Rationale |
 |---------|---------|-----------|
 | AVG_SYS_BP | mean(BPXSY1, BPXSY2, BPXSY3) | Average systolic BP |
 | AVG_DIA_BP | mean(BPXDI1, BPXDI2, BPXDI3) | Average diastolic BP |
-| TOTAL_WATER | DR1_320Z + DR1_330Z + DR1BWATZ | Total water intake |
-| ACR_RATIO | URXUMA / URXUCR | Albumin-creatinine ratio (kidney function) |
+| PULSE_PRESSURE | AVG_SYS_BP - AVG_DIA_BP | Arterial stiffness; >60 = elevated |
+| MAP | (AVG_SYS_BP + 2×AVG_DIA_BP) / 3 | Mean arterial pressure |
+| BP_VARIABILITY | std(BPXSY1, BPXSY2, BPXSY3) | Reading-to-reading variability |
+
+**Weight/Body Derived**:
+| Feature | Formula | Rationale |
+|---------|---------|-----------|
 | WEIGHT_CHANGE_10YR | BMXWT - (WHD110 * 0.453592) | Weight change from 10yrs ago (lbs→kg) |
 | WEIGHT_CHANGE_25 | BMXWT - (WHD120 * 0.453592) | Weight change from age 25 (lbs→kg) |
 | WEIGHT_FROM_MAX | (WHD140 * 0.453592) - BMXWT | Difference from heaviest (lbs→kg) |
-| WAKE_TIME_DIFF | SLQ330 - SLQ310 | Weekend vs weekday wake time difference |
-| WAIST_HEIGHT_RATIO | BMXWAIST / BMXHT | Waist-to-height ratio |
+| WAIST_HEIGHT_RATIO | BMXWAIST / BMXHT | Waist-to-height ratio; >0.5 = elevated |
+
+**Dietary Derived**:
+| Feature | Formula | Rationale |
+|---------|---------|-----------|
+| TOTAL_WATER | DR1_320Z + DR1_330Z + DR1BWATZ | Total water intake |
 | SAT_FAT_PCT | DR1TSFAT / DR1TTFAT * 100 | Saturated fat % of total fat |
+| CARB_FIBER_RATIO | DR1TCARB / DR1TFIBE | Carb quality; >15 = poor |
+| SUGAR_CARB_RATIO | DR1TSUGR / DR1TCARB * 100 | Simple vs complex carbs |
+
+**Laboratory Derived** (with_labs only):
+| Feature | Formula | Rationale |
+|---------|---------|-----------|
+| ACR_RATIO | URXUMA / URXUCR | Albumin-creatinine ratio (kidney function) |
+| TG_HDL_RATIO | LBXTR / LBDHDD | Insulin resistance marker; >3.0 = elevated |
+| NON_HDL_CHOL | LBXTC - LBDHDD | All atherogenic lipoproteins |
+
+**Sleep Derived**:
+| Feature | Formula | Rationale |
+|---------|---------|-----------|
+| WAKE_TIME_DIFF | SLQ330 - SLQ310 | Weekend vs weekday wake time (social jet lag) |
+| SLEEP_DURATION_DIFF | SLD013 - SLD012 | Weekend vs weekday sleep hours |
+
+**Mental Health/Medical History Derived**:
+| Feature | Formula | Rationale |
+|---------|---------|-----------|
+| PHQ9_SCORE | sum(DPQ010-DPQ090) | Depression total score (0-27) |
+| ANY_CVD | any(MCQ160B-F) = 1 | Any cardiovascular disease history |
 
 **Interaction Features** (consider for Phase 7):
 - BMI × Age
@@ -352,9 +365,9 @@ Create the following engineered features:
 ### 4.2 Feature Categories
 Organize features into groups for analysis:
 
-> **IMPLEMENTATION NOTE**: ~95 base features defined below plus ~10 derived features.
+> **IMPLEMENTATION NOTE**: ~92 base features defined below plus 20 derived features = 112 total.
+> With missing flags included: 171 features (with_labs) or 140 features (without_labs).
 > Features with >50% missing in current dataset are marked with † - these may have better coverage when 1999-2018 data is added.
-> Additional features from raw dataset may be added later if needed.
 
 **Demographic** (2):
 - Age (RIDAGEYR), Gender (RIAGENDR)
@@ -366,29 +379,31 @@ Organize features into groups for analysis:
 - Raw: Weight 10 yrs ago (WHD110), Weight at age 25 (WHD120), Greatest weight (WHD140), Age at heaviest (WHD130)†
 - Derived: WEIGHT_CHANGE_10YR, WEIGHT_CHANGE_25, WEIGHT_FROM_MAX
 
-**Blood Pressure Exam** (6 raw → 2 derived):
+**Blood Pressure Exam** (6 raw + 5 derived):
 - Raw: BPXSY1/2/3, BPXDI1/2/3
-- Derived: AVG_SYS_BP, AVG_DIA_BP
+- Derived: AVG_SYS_BP, AVG_DIA_BP, PULSE_PRESSURE, MAP, BP_VARIABILITY
 
 **Blood Pressure/Cholesterol Questionnaire** (5):
 - High BP told (BPQ020), Taking Rx for hypertension (BPQ040A)†
 - High cholesterol told (BPQ080), Told take Rx for cholesterol (BPQ090D), Now taking Rx (BPQ100D)†
 
-**Dietary - Nutrients** (15):
+**Dietary - Nutrients** (15 raw + 4 derived):
 - Energy (DR1TKCAL), Protein (DR1TPROT), Carbohydrates (DR1TCARB), Sugars (DR1TSUGR), Fiber (DR1TFIBE)
 - Total fat (DR1TTFAT), Saturated (DR1TSFAT), Mono (DR1TMFAT), Poly (DR1TPFAT)
 - Sodium (DR1TSODI), Caffeine (DR1TCAFF), Alcohol (DR1TALCO)
 - Water: Plain (DR1_320Z), Tap (DR1_330Z), Bottled (DR1BWATZ)
+- Derived: TOTAL_WATER, SAT_FAT_PCT, CARB_FIBER_RATIO, SUGAR_CARB_RATIO
 
 **Dietary - Behavior** (4):
 - How healthy is diet (DBQ700), Meals not home prepared (DBD895)
 - Meals from fast food/pizza (DBD900), Milk consumption past 30 days (DBQ197)
 
-**Laboratory** (14):
+**Laboratory** (14 raw + 3 derived):
 - Lipid panel: Total cholesterol (LBXTC), HDL (LBDHDD), LDL (LBDLDL)†, Triglycerides (LBXTR)†
 - Kidney function: Urine albumin (URXUMA), Urine creatinine (URXUCR), Serum creatinine (LBXSCR)
 - Liver function: ALT (LBXSATSI), AST (LBXSASSI), GGT (LBXSGTSI)
 - Blood count: WBC (LBXWBCSI), Hematocrit (LBXHCT), Hemoglobin (LBXHGB), Platelets (LBXPLTSI)
+- Derived: ACR_RATIO, TG_HDL_RATIO, NON_HDL_CHOL
 
 **Lifestyle - Alcohol** (2):
 - Drinks/day (ALQ130), Frequency (ALQ121)† or (ALQ120Q)†
@@ -400,22 +415,24 @@ Organize features into groups for analysis:
 - Vigorous work (PAQ605), Moderate work (PAQ620), Walk/bicycle (PAQ635)
 - Vigorous recreational (PAQ650), Moderate recreational (PAQ665), Sedentary min/day (PAD680)
 
-**Lifestyle - Sleep** (5 raw + 1 derived):
+**Lifestyle - Sleep** (5 raw + 2 derived):
 - Raw: Weekday hours (SLD012), Weekend hours (SLD013)†, Sleep disorder (SLQ050)
 - Raw: Weekday wake time (SLQ310), Weekend wake time (SLQ330)†
-- Derived: WAKE_TIME_DIFF (weekend - weekday wake time)
+- Derived: WAKE_TIME_DIFF (social jet lag), SLEEP_DURATION_DIFF (sleep debt)
 
 **Cardiovascular** (1):
 - Shortness of breath on stairs/inclines (CDQ010)
 
-**Medical History** (11):
+**Medical History** (9 raw + 1 derived):
 - CHF (MCQ160B), CHD (MCQ160C), Angina (MCQ160D), Heart attack (MCQ160E), Stroke (MCQ160F)
 - Family history diabetes (MCQ300C)
 - Liver condition (MCQ160L), Weak/failing kidneys (KIQ022)
 - Cancer/malignancy ever (MCQ220)
+- Derived: ANY_CVD (composite of MCQ160B-F)
 
-**Mental Health - PHQ-9 Depression** (9):
-- DPQ010, DPQ020, DPQ030, DPQ040, DPQ050, DPQ060, DPQ070, DPQ080, DPQ090
+**Mental Health - PHQ-9 Depression** (9 raw + 1 derived):
+- Raw: DPQ010, DPQ020, DPQ030, DPQ040, DPQ050, DPQ060, DPQ070, DPQ080, DPQ090
+- Derived: PHQ9_SCORE (sum of items, 0-27)
 
 † = >50% missing in 2015-2018 data; may improve with full 1999-2018 dataset
 
@@ -469,7 +486,7 @@ Create these specific visualizations for reports/README:
 5. **Demographic Summary**: Population characteristics table/visualization
 6. **Key Risk Factors**: Forest plot or similar showing univariate associations
 
-**ASK USER**: Review EDA findings before proceeding. Discuss any surprising patterns or data quality concerns.
+**Checkpoint**: Review EDA findings before proceeding to modeling. Document any surprising patterns or data quality concerns in CHANGELOG.
 
 ---
 
@@ -561,7 +578,7 @@ Establish performance benchmarks with simple models:
 | MLP (sklearn) | 1-2 min | 50 | ~1.5 hours |
 | Deep Learning | 5-10 min | 30 | ~5 hours |
 
-**ASK USER**: Confirm acceptable training times. Offer to reduce search space if needed.
+**Checkpoint**: Confirm acceptable training times before starting. Can reduce search space if needed.
 
 ### 7.4 Experiment Tracking
 Track for each experiment:
@@ -845,6 +862,6 @@ Update CHANGELOG.md after completing each phase or significant step. Include:
 | SLD012/SLD013 | SLD010H | Sleep hours |
 | SMD641 | SMD080 | Smoking days past 30 |
 | SMD650 | SMD090 | Cigarettes per day |
-| MCQ250A | MCQ300C | Family diabetes history |
+| MCQ300C | MCQ250A | Family diabetes history |
 | MCQ500 | MCQ160L | Liver condition |
 | KIQ022 | KIQ020 | Kidney condition |
