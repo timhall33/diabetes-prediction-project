@@ -502,8 +502,88 @@ Create derived features with clinical rationale, define feature sets (with/witho
 
 ### Next Steps
 - **Phase 5**: Exploratory Data Analysis (EDA)
-  - Univariate/bivariate analysis
-  - Feature correlations
-  - Publication-quality visualizations
+
+---
+
+## [2026-01-31] - Phase 5: Exploratory Data Analysis (EDA)
+
+### Objective
+Create publication-quality visualizations exploring diabetes risk factors in the NHANES dataset. Answer key questions about feature differences by diabetes status, strongest correlations, feature interactions, and temporal trends.
+
+### Implementation
+
+**Files created:**
+- `src/visualization/eda.py` - Comprehensive visualization module with 15+ functions
+- `notebooks/05_eda_visualizations.ipynb` - EDA notebook generating all figures
+
+**Visualization Module Features:**
+- Consistent colorblind-friendly palette (Blue/Orange/Red for No Diabetes/Prediabetes/Diabetes)
+- Publication settings: 300 DPI, professional fonts, clean styling
+- Reusable functions for target distribution, feature panels, correlations, interactions, PCA
+
+**Figures Generated (29 total):**
+
+| Category | Figures |
+|----------|---------|
+| **Population Overview** | `cohort_flow.png`, `target_distribution_final.png`, `demographics_by_status.png` |
+| **Feature Distributions** | `features_anthropometric.png`, `features_blood_pressure.png`, `features_laboratory.png`, `features_dietary.png` |
+| **Individual Deep Dives** | `hba1c_kde_by_status.png`, `waist_height_ratio_by_status.png`, `phq9_by_status.png` |
+| **Correlation Analysis** | `top_correlations.png`, `correlation_heatmap.png` |
+| **Feature Interactions** | `scatter_bmi_age.png`, `scatter_metabolic.png`, `feature_interactions.png` |
+| **Temporal Analysis** | `prevalence_by_year.png`, `bmi_by_year.png`, `age_by_year.png` |
+| **Dimensionality Reduction** | `pca_analysis.png` |
+| **Risk Factors** | `risk_factors_forest.png` |
+| **Summary** | `eda_summary_dashboard.png` |
+
+### Key Findings
+
+**1. Feature Differences by Diabetes Status:**
+- Clear progression across all metabolic markers: No Diabetes → Prediabetes → Diabetes
+- BMI: 28.1 → 30.3 → 33.0 kg/m² (mean by status)
+- Age: 43.2 → 51.8 → 59.4 years (mean by status)
+- Waist-height ratio: 73.9% exceed 0.5 threshold overall
+
+**2. Strongest Correlations with Diabetes Status (Spearman):**
+| Feature | Correlation |
+|---------|-------------|
+| RIDAGEYR (Age) | +0.28 |
+| BMXBMI | +0.18 |
+| BMXWAIST | +0.23 |
+| WAIST_HEIGHT_RATIO | +0.21 |
+| AVG_SYS_BP | +0.22 |
+| PHQ9_SCORE | +0.08 |
+
+**3. Feature Interactions:**
+- BMI × Age: Diabetes concentrated in high-BMI/older-age quadrant
+- Waist-height × TG/HDL: Both insulin resistance markers cluster in diabetic group
+- Metabolic features highly intercorrelated (obesity, hypertension, dyslipidemia)
+
+**4. Temporal Trends (2015-2018):**
+- Diabetes prevalence: ~19% (stable across both survey cycles)
+- No significant shifts in BMI or age distributions between years
+- Consistent sampling methodology confirmed
+
+**5. PCA Results:**
+- PC1 explains ~15% of variance (dominated by anthropometric/metabolic features)
+- 10 components needed for 50% variance
+- Moderate but imperfect separation of diabetes groups in PC space
+
+**6. Effect Sizes (Cohen's d, No Diabetes vs Diabetes):**
+- Largest positive effects: Age (+0.72), Waist circumference (+0.52), Systolic BP (+0.45)
+- Depression (PHQ9) shows small but significant effect (+0.15)
+
+### Learnings
+
+1. **Color palette matters**: Colorblind-friendly palette essential for accessibility
+2. **Data cleaning for visualization**: PCA required handling mixed dtypes and imputation
+3. **Sample size for scatter plots**: Used 30-50% sampling to prevent overplotting while preserving patterns
+4. **Statistical annotations**: Adding Kruskal-Wallis p-values validates visual differences
+
+### Next Steps
+- **Phase 6**: Baseline Models
+  - Train/validation/test split (70/15/15, stratified)
+  - Naive baselines (majority class, mean predictor)
+  - Simple models (Logistic Regression, Decision Tree)
+  - Establish performance benchmarks
 
 ---
