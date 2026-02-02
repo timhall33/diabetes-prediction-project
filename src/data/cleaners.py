@@ -17,19 +17,29 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 
-# NHANES special value patterns
+# NHANES special value patterns (for questionnaire data)
 REFUSED_PATTERNS = {7, 77, 777, 7777, 77777}
 DONT_KNOW_PATTERNS = {9, 99, 999, 9999, 99999}
+ALL_SPECIAL_PATTERNS = REFUSED_PATTERNS | DONT_KNOW_PATTERNS | {-7, -9}
 
 # Target-related columns that should NEVER be imputed
 TARGET_RELATED_COLS = {
-    'LBXGH',      # HbA1c - regression target
-    'LBXGLU',     # Fasting glucose - classification target component
-    'DIQ010',     # Self-reported diabetes
-    'DIQ050',     # Taking diabetes pills
-    'DIQ070',     # Taking insulin
+    'LBXGH',      # HbA1c - regression target (LAB VALUE)
+    'LBXGLU',     # Fasting glucose - classification target component (LAB VALUE)
+    'DIQ010',     # Self-reported diabetes (QUESTIONNAIRE)
+    'DIQ050',     # Taking diabetes pills (QUESTIONNAIRE)
+    'DIQ070',     # Taking insulin (QUESTIONNAIRE)
     'DIABETES_STATUS',  # Derived target variable
 }
+
+# Lab values don't use 7/9 special codes - they're either measured or NaN
+# Only questionnaire items need special value cleaning
+LAB_VALUE_COLS = {'LBXGH', 'LBXGLU', 'DIABETES_STATUS'}
+QUESTIONNAIRE_TARGET_COLS = {'DIQ010', 'DIQ050', 'DIQ070'}
+
+# Columns to EXCLUDE from special value recoding (lab values where 7/9 are valid)
+# Lab values starting with LBX, URX, etc. don't use 7/9 codes
+LAB_PREFIXES = ('LBX', 'LBD', 'URX', 'URD', 'LBXS')
 
 
 def get_project_root() -> Path:
@@ -44,17 +54,78 @@ def load_config() -> dict:
         return yaml.safe_load(f)
 
 
+def clean_target_columns(
+    df: pd.DataFrame,
+    target_cols: Optional[List[str]] = None
+) -> Tuple[pd.DataFrame, Dict]:
+    """
+    Clean questionnaire-based target columns by converting special NHANES codes to NaN.
+
+    IMPORTANT: Only applies to QUESTIONNAIRE items (DIQ010, DIQ050, DIQ070), NOT lab values.
+    Lab values (LBXGH, LBXGLU) don't use 7/9 special codes - values like 7.0% HbA1c are
+    valid measurements.
+
+    For questionnaire targets, special values (7/77/777=Refused, 9/99/999=Don't Know)
+    should be treated as missing, not valid values.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe.
+    target_cols : list, optional
+        Target-related columns to clean. If None, uses QUESTIONNAIRE_TARGET_COLS only.
+
+    Returns
+    -------
+    tuple
+        (cleaned_df, changes_log)
+    """
+    df = df.copy()
+    # Only clean questionnaire items, NOT lab values
+    target_cols = target_cols or list(QUESTIONNAIRE_TARGET_COLS)
+    changes_log = {}
+
+    for col in target_cols:
+        if col not in df.columns:
+            continue
+
+        # Convert all special values to NaN
+        special_mask = df[col].isin(ALL_SPECIAL_PATTERNS)
+        n_special = special_mask.sum()
+
+        if n_special > 0:
+            # Capture what values were found before converting
+            values_found = df.loc[special_mask, col].value_counts().to_dict()
+            df.loc[special_mask, col] = np.nan
+            changes_log[col] = {
+                'n_converted_to_nan': int(n_special),
+                'values_found': values_found
+            }
+            logger.info(f"Cleaned {col}: converted {n_special} special values to NaN")
+
+    return df, changes_log
+
+
+def is_lab_column(col_name: str) -> bool:
+    """Check if a column is a laboratory value (shouldn't have 7/9 special codes)."""
+    return col_name.startswith(LAB_PREFIXES)
+
+
 def recode_special_values(
     df: pd.DataFrame,
     refused_code: int = -7,
     dont_know_code: int = -9,
-    columns: Optional[List[str]] = None
+    columns: Optional[List[str]] = None,
+    skip_lab_values: bool = True
 ) -> Tuple[pd.DataFrame, Dict]:
     """
     Recode NHANES special values to distinct codes.
 
     NHANES uses patterns like 7, 77, 777 for "Refused" and 9, 99, 999 for "Don't know".
     This function recodes them to preserve the semantic meaning.
+
+    IMPORTANT: Lab values (columns starting with LBX, LBD, URX, URD) are SKIPPED by default
+    because they don't use 7/9 special codes - those are valid measurements.
 
     Parameters
     ----------
@@ -65,7 +136,9 @@ def recode_special_values(
     dont_know_code : int, default -9
         Code to use for "Don't know" responses.
     columns : list, optional
-        Specific columns to process. If None, processes all numeric columns.
+        Specific columns to process. If None, processes all numeric columns except lab values.
+    skip_lab_values : bool, default True
+        If True, skip columns that appear to be lab values (LBX*, URX*, etc.).
 
     Returns
     -------
@@ -73,7 +146,7 @@ def recode_special_values(
         (cleaned_df, changes_log) where changes_log documents what was changed.
     """
     df = df.copy()
-    changes_log = {'refused': {}, 'dont_know': {}}
+    changes_log = {'refused': {}, 'dont_know': {}, 'skipped_lab_cols': []}
 
     if columns is None:
         # Only process numeric columns (special values are numeric)
@@ -81,6 +154,11 @@ def recode_special_values(
 
     for col in columns:
         if col not in df.columns:
+            continue
+
+        # Skip lab value columns - they don't use 7/9 special codes
+        if skip_lab_values and is_lab_column(col):
+            changes_log['skipped_lab_cols'].append(col)
             continue
 
         # Count refused values
@@ -99,8 +177,11 @@ def recode_special_values(
 
     total_refused = sum(changes_log['refused'].values())
     total_dont_know = sum(changes_log['dont_know'].values())
+    n_skipped = len(changes_log['skipped_lab_cols'])
     logger.info(f"Recoded {total_refused} 'Refused' values to {refused_code}")
     logger.info(f"Recoded {total_dont_know} 'Don't know' values to {dont_know_code}")
+    if n_skipped > 0:
+        logger.info(f"Skipped {n_skipped} lab value columns (no special code recoding needed)")
 
     return df, changes_log
 
@@ -363,13 +444,18 @@ def clean_pipeline(
         'steps': {}
     }
 
-    # Step 1: Recode special values
-    logger.info("\nStep 1: Recoding special values...")
+    # Step 1: Clean target columns (convert special values to NaN)
+    logger.info("\nStep 1: Cleaning target columns (special values → NaN)...")
+    df, target_clean_log = clean_target_columns(df)
+    cleaning_report['steps']['clean_target_columns'] = target_clean_log
+
+    # Step 2: Recode special values for features (7→-7, 9→-9)
+    logger.info("\nStep 2: Recoding feature special values...")
     df, recode_log = recode_special_values(df)
     cleaning_report['steps']['recode_special_values'] = recode_log
 
-    # Step 2: Create missing flags
-    logger.info("\nStep 2: Creating missing flags...")
+    # Step 3: Create missing flags
+    logger.info("\nStep 3: Creating missing flags...")
     df, flag_columns = create_missing_flags(df, threshold=missing_flag_threshold)
     cleaning_report['steps']['missing_flags'] = {
         'threshold': missing_flag_threshold,
@@ -377,8 +463,8 @@ def clean_pipeline(
         'flag_columns': flag_columns
     }
 
-    # Step 3: Imputation
-    logger.info("\nStep 3: Imputing missing values...")
+    # Step 4: Imputation
+    logger.info("\nStep 4: Imputing missing values...")
     if minimal_impute:
         df, impute_log = impute_low_missing(df, threshold=impute_threshold)
     else:

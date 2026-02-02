@@ -271,12 +271,17 @@ What we set out to accomplish
 
 **Implemented Approach**:
 - Median/mode imputation (not MICE) for simplicity and speed
-- Two datasets created: "minimal" (impute <5% only, for tree models) and "full" (impute ≤50%, for linear/NN)
-- Features with >50% missing are NOT imputed (too unreliable)
 - "Refused" and "Don't Know" are preserved as distinct categories (-7, -9), not treated as missing
-- Missing indicator flags (`_MISSING` columns) created for features with ≥5% missing
 - Target-related columns (LBXGH, LBXGLU, DIQ010, DIQ050, DIQ070) are NEVER imputed
 - See CHANGELOG.md Phase 3 for full details
+
+**Four Processed Datasets** (created in Phase 4):
+| Dataset | Feature Set | Imputation | Use Case | Shape |
+|---------|-------------|------------|----------|-------|
+| `X_with_labs_minimal` | with_labs | <5% missing only | LightGBM (handles NaN) | (11698, 109) |
+| `X_with_labs_full` | with_labs | All ≤50% missing, >50% removed | LogReg, MLP | (11698, 96) |
+| `X_without_labs_minimal` | without_labs | <5% missing only | LightGBM (handles NaN) | (11698, 92) |
+| `X_without_labs_full` | without_labs | All ≤50% missing, >50% removed | LogReg, MLP | (11698, 82) |
 
 ### 3.2 Variable Harmonization
 **Objective**: Standardize variables across survey years

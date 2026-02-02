@@ -7,6 +7,7 @@ from .builders import (
     create_acr_ratio,
     create_weight_change_features,
     create_wake_time_diff,
+    create_wake_time_hours,
     create_waist_height_ratio,
     create_sat_fat_percentage,
     create_pulse_pressure,
@@ -22,6 +23,7 @@ from .builders import (
     get_feature_sets,
     validate_feature_availability,
     prepare_modeling_data,
+    create_all_modeling_datasets,
 )
 
 __all__ = [
@@ -31,6 +33,7 @@ __all__ = [
     'create_acr_ratio',
     'create_weight_change_features',
     'create_wake_time_diff',
+    'create_wake_time_hours',
     'create_waist_height_ratio',
     'create_sat_fat_percentage',
     'create_pulse_pressure',
@@ -46,4 +49,5 @@ __all__ = [
     'get_feature_sets',
     'validate_feature_availability',
     'prepare_modeling_data',
+    'create_all_modeling_datasets',
 ]

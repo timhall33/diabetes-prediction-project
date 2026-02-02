@@ -16,32 +16,37 @@ This document tracks the progress, decisions, and learnings throughout the NHANE
 | `cleaned_full_impute.parquet` | 11,723 × 1,562 | For LogReg/NN (imputed ≤50% missing) |
 
 *Processed* (`data/processed/`):
-| File | Shape | Description |
-|------|-------|-------------|
-| `features_engineered.parquet` | 11,723 × 1,582 | All features + 20 derived |
-| `X_with_labs.parquet` | 11,698 × 171 | Modeling features (with labs) |
-| `X_without_labs.parquet` | 11,698 × 140 | Modeling features (no labs) |
-| `y_with_labs.parquet` | 11,698 × 1 | Target variable |
+| File | Shape | Has NaN | Use For |
+|------|-------|---------|---------|
+| `features_engineered.parquet` | 11,723 × 1,584 | Yes | All features + 22 derived |
+| `X_with_labs_minimal.parquet` | 11,698 × 109 | Yes | LightGBM (handles NaN) |
+| `X_with_labs_full.parquet` | 11,698 × 96 | No | LogReg, MLP (no NaN) |
+| `X_without_labs_minimal.parquet` | 11,698 × 92 | Yes | LightGBM (handles NaN) |
+| `X_without_labs_full.parquet` | 11,698 × 82 | No | LogReg, MLP (no NaN) |
+| `y_*.parquet` | 11,698 × 1 | No | Target variables |
 
-**Key Constants** (defined in `src/data/cleaners.py`):
+**Key Constants**:
 ```python
 TARGET_RELATED_COLS = {'LBXGH', 'LBXGLU', 'DIQ010', 'DIQ050', 'DIQ070', 'DIABETES_STATUS'}
 # These are NEVER imputed - they define the target variable
 
-MISSING_FLAG_THRESHOLD = 0.05   # Create _MISSING flags for ≥5% missing
 IMPUTE_THRESHOLD = 0.05         # Minimal imputation: only <5% missing
-MAX_MISSING_RATE = 0.50         # Full imputation: only ≤50% missing
+MAX_MISSING_RATE = 0.50         # Full imputation: ≤50% missing; >50% removed
 ```
 
-**Special Value Encoding**:
+**Special Value Encoding** (questionnaire items only, NOT lab values):
 - `-7` = Refused (originally 7, 77, 777...)
 - `-9` = Don't Know (originally 9, 99, 999...)
 - `NaN` = Not collected / structurally missing
+- Lab columns (LBX*, URX*, etc.) keep original values - 7.0, 9.0 are valid measurements!
 
-**Feature Set** (defined in PRD section 4.2):
-- ~95 base features + ~10 derived features
-- 11 features have >50% missing in 2015-2018 (marked † in PRD) - may improve with full dataset
-- Option to add more features from raw dataset later
+**Derived Features** (22 total):
+- Blood pressure: AVG_SYS_BP, AVG_DIA_BP, PULSE_PRESSURE, MAP, BP_VARIABILITY
+- Weight: WEIGHT_CHANGE_10YR, WEIGHT_CHANGE_25, WEIGHT_FROM_MAX
+- Sleep: WAKE_TIME_DIFF, SLEEP_DURATION_DIFF, SLQ310_HOURS, SLQ330_HOURS
+- Dietary: TOTAL_WATER, SAT_FAT_PCT, CARB_FIBER_RATIO, SUGAR_CARB_RATIO
+- Labs: ACR_RATIO, TG_HDL_RATIO, NON_HDL_CHOL
+- Other: WAIST_HEIGHT_RATIO, PHQ9_SCORE, ANY_CVD
 
 ---
 
@@ -581,9 +586,104 @@ Create publication-quality visualizations exploring diabetes risk factors in the
 
 ### Next Steps
 - **Phase 6**: Baseline Models
-  - Train/validation/test split (70/15/15, stratified)
-  - Naive baselines (majority class, mean predictor)
-  - Simple models (Logistic Regression, Decision Tree)
-  - Establish performance benchmarks
+
+---
+
+## [2026-02-01] - Phase 6: Baseline Models
+
+### Objective
+Establish performance benchmarks with simple models before implementing advanced approaches.
+
+### Decisions Made
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| **Data splits** | 70/15/15 (train/val/test), stratified | Standard split with stratification to maintain class balance |
+| **4 Dataset Structure** | minimal (NaN) + full (no NaN) × with/without labs | Different models have different NaN handling capabilities |
+| **Evaluation metric** | F1 Macro (classification), RMSE (regression) | F1 Macro balances performance across imbalanced classes |
+
+### Implementation
+
+**Data Structure Finalized:**
+| Dataset | Features | Has NaN | Use For |
+|---------|----------|---------|---------|
+| `X_with_labs_minimal` | 109 | Yes | LightGBM |
+| `X_with_labs_full` | 96 | No | LogReg, MLP |
+| `X_without_labs_minimal` | 92 | Yes | LightGBM |
+| `X_without_labs_full` | 82 | No | LogReg, MLP |
+
+**Files Created:**
+- `src/models/train.py` - Training utilities, CV, MLflow tracking, Optuna tuning
+- `src/models/evaluate.py` - Metrics, confusion matrices, ROC curves
+- `notebooks/06_baseline_models.ipynb` - Baseline model training and evaluation
+- `models/baseline/` - Saved models and results
+
+### Results/Outcomes
+
+**Classification Baselines (Validation Set):**
+| Model | With Labs F1 | Without Labs F1 | AUC (with labs) |
+|-------|--------------|-----------------|-----------------|
+| Dummy (Stratified) | 0.337 | 0.337 | 0.502 |
+| Dummy (Most Frequent) | 0.218 | 0.218 | 0.500 |
+| **Logistic Regression** | **0.544** | 0.517 | **0.749** |
+| Decision Tree | 0.550 | 0.512 | 0.740 |
+
+**Regression Baselines (Validation Set) - HbA1c Prediction:**
+| Model | With Labs RMSE | Without Labs RMSE | R² (with labs) |
+|-------|----------------|-------------------|----------------|
+| Dummy (Mean) | 1.328 | 1.328 | 0.000 |
+| Dummy (Median) | 1.334 | 1.334 | -0.009 |
+| **Ridge Regression** | **1.167** | 1.258 | **0.228** |
+| Decision Tree | 1.213 | 1.268 | 0.166 |
+
+**Key Findings:**
+1. Logistic Regression achieves F1=0.544 (with labs) - a reasonable baseline
+2. Labs matter: ~2.7% F1 drop without laboratory features
+3. Regression is harder: R²=0.23 best case, indicating HbA1c is difficult to predict from other features
+4. Decision Tree performs comparably to LogReg, suggesting non-linear patterns exist
+
+### Learnings
+
+1. **Baseline importance**: The naive baseline (F1=0.337) sets the floor - any model must beat this
+2. **Class imbalance managed**: Stratified splitting and class weights help balance classes
+3. **Labs vs No Labs**: Performance gap is modest for classification but significant for regression
+4. **Model choice by data type**: Linear models need full imputation; tree models can handle NaN
+
+### Next Steps
+- **Phase 7**: Advanced Models
+  - LightGBM with hyperparameter tuning (using minimal imputation datasets)
+  - MLP Classifier/Regressor (using full imputation datasets)
+  - Optuna for Bayesian hyperparameter optimization
+  - Compare all models on held-out test set
+
+---
+
+## [2026-02-01] - Data Fix: Lab Values Special Code Handling
+
+### Issue Discovered
+During data verification before Phase 7, discovered that LBXGH (HbA1c) and other lab values contained invalid -7/-9 values. These were legitimate measurements (7.0% and 9.0% HbA1c) incorrectly recoded as "Refused" and "Don't Know" special codes.
+
+### Root Cause
+The `recode_special_values()` function was treating literal values 7 and 9 in laboratory columns as NHANES special codes when they were actually valid measurements:
+- 61 patients with HbA1c of exactly 7.0% → incorrectly recoded to -7
+- 13 patients with HbA1c of exactly 9.0% → incorrectly recoded to -9
+
+**Key insight**: NHANES 7/9 special codes are for **questionnaire items only**, not laboratory values. Lab results are either measured numeric values or NaN (not collected).
+
+### Fix Applied
+Updated `src/data/cleaners.py`:
+1. Added `is_lab_column()` - detects lab columns by prefix (LBX, LBD, URX, URD)
+2. Modified `recode_special_values()` - now skips lab columns (83 columns)
+3. Modified `clean_target_columns()` - only cleans questionnaire targets (DIQ010, DIQ050, DIQ070), not lab values
+
+### Verification
+After fix, LBXGH shows correct values:
+- Range: 3.8% - 17.0% (clinically valid)
+- 61 values at 7.0% preserved ✓
+- 13 values at 9.0% preserved ✓
+- 0 invalid -7 or -9 values ✓
+
+### Data Regenerated
+All interim and processed datasets regenerated with correct handling.
 
 ---

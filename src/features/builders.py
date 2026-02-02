@@ -361,6 +361,98 @@ def create_wake_time_diff(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict]:
     return df, stats
 
 
+def create_wake_time_hours(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict]:
+    """
+    Convert wake time columns from time strings to decimal hours.
+
+    CLINICAL RATIONALE:
+    - Wake time reflects circadian rhythm patterns
+    - Early vs late chronotype associated with metabolic health differences
+    - Late chronotype (waking later) associated with higher diabetes risk
+    - Capturing actual wake time (not just difference) provides additional signal
+
+    CALCULATION:
+    - SLQ310_HOURS = weekday wake time in decimal hours (e.g., "05:30" -> 5.5)
+    - SLQ330_HOURS = weekend wake time in decimal hours
+
+    EDGE CASES:
+    - Times stored as "HH:MM" string format
+    - Special values (-7, -9) treated as missing
+    - Times after midnight (e.g., 01:00) are valid for late sleepers
+    """
+    df = df.copy()
+    stats = {}
+
+    def time_to_decimal_hours(series):
+        """Convert time to decimal hours. Handles both HH:MM string and HHMM numeric formats."""
+        result = pd.Series(index=series.index, dtype=float)
+
+        for idx, val in series.items():
+            if pd.isna(val):
+                result[idx] = np.nan
+            elif isinstance(val, str):
+                # Handle "HH:MM" string format
+                try:
+                    if ':' in val:
+                        parts = val.split(':')
+                        hours = int(parts[0]) + int(parts[1]) / 60
+                        result[idx] = hours
+                    else:
+                        result[idx] = np.nan
+                except (ValueError, IndexError):
+                    result[idx] = np.nan
+            elif isinstance(val, (int, float)):
+                # Handle HHMM numeric format or special values
+                if val in {-7, -9, 7777, 9999}:
+                    result[idx] = np.nan
+                else:
+                    val = int(val)
+                    hours = (val // 100) + (val % 100) / 60
+                    result[idx] = hours
+            else:
+                result[idx] = np.nan
+
+        return result
+
+    # Convert weekday wake time
+    if 'SLQ310' in df.columns:
+        df['SLQ310_HOURS'] = time_to_decimal_hours(df['SLQ310'])
+
+        valid = df['SLQ310_HOURS'].dropna()
+        if len(valid) > 0:
+            stats['SLQ310_HOURS'] = {
+                'source_col': 'SLQ310',
+                'n_valid': int(len(valid)),
+                'mean': float(valid.mean()),
+                'median': float(valid.median()),
+                'range': [float(valid.min()), float(valid.max())],
+                'pct_before_6am': float((valid < 6).mean() * 100),
+                'pct_after_8am': float((valid > 8).mean() * 100)
+            }
+            logger.info(f"Created SLQ310_HOURS (weekday wake): mean={stats['SLQ310_HOURS']['mean']:.1f}h, "
+                       f"before 6am: {stats['SLQ310_HOURS']['pct_before_6am']:.1f}%")
+
+    # Convert weekend wake time
+    if 'SLQ330' in df.columns:
+        df['SLQ330_HOURS'] = time_to_decimal_hours(df['SLQ330'])
+
+        valid = df['SLQ330_HOURS'].dropna()
+        if len(valid) > 0:
+            stats['SLQ330_HOURS'] = {
+                'source_col': 'SLQ330',
+                'n_valid': int(len(valid)),
+                'mean': float(valid.mean()),
+                'median': float(valid.median()),
+                'range': [float(valid.min()), float(valid.max())],
+                'pct_before_6am': float((valid < 6).mean() * 100),
+                'pct_after_8am': float((valid > 8).mean() * 100)
+            }
+            logger.info(f"Created SLQ330_HOURS (weekend wake): mean={stats['SLQ330_HOURS']['mean']:.1f}h, "
+                       f"after 8am: {stats['SLQ330_HOURS']['pct_after_8am']:.1f}%")
+
+    return df, stats
+
+
 def create_waist_height_ratio(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict]:
     """
     Create waist-to-height ratio for central obesity assessment.
@@ -972,6 +1064,10 @@ def create_all_derived_features(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict]:
     df, stats = create_wake_time_diff(df)
     all_stats.update(stats)
 
+    # Wake time in decimal hours (converts time strings to numeric)
+    df, stats = create_wake_time_hours(df)
+    all_stats.update(stats)
+
     # Waist-to-height ratio
     df, stats = create_waist_height_ratio(df)
     all_stats.update(stats)
@@ -1177,8 +1273,8 @@ def get_feature_sets() -> Dict[str, Dict]:
         'SLD012',     # Weekday hours
         'SLD013',     # Weekend hours
         'SLQ050',     # Sleep disorder
-        'SLQ310',     # Weekday wake time
-        'SLQ330',     # Weekend wake time
+        'SLQ310_HOURS',   # Weekday wake time (decimal hours, derived from SLQ310)
+        'SLQ330_HOURS',   # Weekend wake time (decimal hours, derived from SLQ330)
         'WAKE_TIME_DIFF',       # Derived: social jet lag (wake time)
         'SLEEP_DURATION_DIFF',  # Derived: sleep debt pattern
     ]
@@ -1317,11 +1413,12 @@ def validate_feature_availability(
 def prepare_modeling_data(
     df: pd.DataFrame,
     feature_set: str = 'with_labs',
+    imputation: str = 'minimal',
     target_col: str = 'DIABETES_STATUS',
-    include_missing_flags: bool = True
+    max_missing_rate: float = 0.50,
 ) -> Tuple[pd.DataFrame, pd.Series, Dict]:
     """
-    Prepare final modeling dataset with specified feature set.
+    Prepare final modeling dataset with specified feature set and imputation level.
 
     Parameters
     ----------
@@ -1329,10 +1426,13 @@ def prepare_modeling_data(
         Input dataframe with all features.
     feature_set : str
         Either 'with_labs' or 'without_labs'.
+    imputation : str
+        'minimal' - preserve NaN values (for tree models like LightGBM)
+        'full' - impute all values and remove features >max_missing_rate (for linear models)
     target_col : str
         Name of target column.
-    include_missing_flags : bool
-        Whether to include _MISSING indicator columns.
+    max_missing_rate : float
+        For 'full' imputation, remove features with missing rate > this threshold.
 
     Returns
     -------
@@ -1344,6 +1444,9 @@ def prepare_modeling_data(
     if feature_set not in feature_sets:
         raise ValueError(f"Unknown feature set: {feature_set}. Choose 'with_labs' or 'without_labs'")
 
+    if imputation not in ['minimal', 'full']:
+        raise ValueError(f"Unknown imputation: {imputation}. Choose 'minimal' or 'full'")
+
     # Get requested features
     requested_features = feature_sets[feature_set]['features']
 
@@ -1353,16 +1456,8 @@ def prepare_modeling_data(
     if missing:
         logger.warning(f"Missing {len(missing)} features: {missing}")
 
-    # Build feature columns list
-    feature_cols = available.copy()
-
-    # Add missing flags if requested
-    if include_missing_flags:
-        missing_flags = [f"{f}_MISSING" for f in available if f"{f}_MISSING" in df.columns]
-        feature_cols.extend(missing_flags)
-
     # Extract X and y
-    X = df[feature_cols].copy()
+    X = df[available].copy()
     y = df[target_col].copy() if target_col in df.columns else None
 
     # Remove rows with missing target
@@ -1371,16 +1466,130 @@ def prepare_modeling_data(
         X = X.loc[valid_target]
         y = y.loc[valid_target]
 
+    # Track removed features
+    removed_high_missing = []
+
+    if imputation == 'full':
+        # Remove features with >max_missing_rate missing
+        missing_rates = X.isna().mean()
+        high_missing = missing_rates[missing_rates > max_missing_rate].index.tolist()
+        removed_high_missing = high_missing
+
+        if high_missing:
+            logger.info(f"Removing {len(high_missing)} features with >{max_missing_rate*100:.0f}% missing: {high_missing}")
+            X = X.drop(columns=high_missing)
+
+        # Impute remaining missing values
+        # Use median for numeric columns
+        for col in X.columns:
+            if X[col].isna().any():
+                if X[col].dtype in ['float64', 'float32', 'int64', 'int32']:
+                    median_val = X[col].median()
+                    X[col] = X[col].fillna(median_val)
+                else:
+                    # For other types, use mode
+                    mode_val = X[col].mode()
+                    if len(mode_val) > 0:
+                        X[col] = X[col].fillna(mode_val[0])
+
+        # Verify no NaN remaining
+        remaining_nan = X.isna().sum().sum()
+        if remaining_nan > 0:
+            logger.warning(f"Warning: {remaining_nan} NaN values remain after imputation")
+
     metadata = {
         'feature_set': feature_set,
-        'n_features': len(feature_cols),
-        'n_base_features': len(available),
-        'n_missing_flags': len(feature_cols) - len(available),
+        'imputation': imputation,
+        'n_features': X.shape[1],
         'n_samples': len(X),
-        'missing_features': missing,
-        'availability': avail_stats
+        'missing_features_not_in_data': missing,
+        'removed_high_missing': removed_high_missing,
+        'availability': avail_stats,
+        'has_nan': X.isna().any().any(),
     }
 
-    logger.info(f"Prepared {feature_set} dataset: {X.shape[0]} samples, {X.shape[1]} features")
+    logger.info(f"Prepared {feature_set}_{imputation} dataset: {X.shape[0]} samples, {X.shape[1]} features")
 
     return X, y, metadata
+
+
+def create_all_modeling_datasets(
+    df: pd.DataFrame,
+    target_col: str = 'DIABETES_STATUS',
+    output_dir: Optional[Path] = None,
+    max_missing_rate: float = 0.50,
+) -> Dict[str, Tuple[pd.DataFrame, pd.Series, Dict]]:
+    """
+    Create all 4 modeling datasets:
+    1. with_labs_minimal - for tree models (LightGBM)
+    2. with_labs_full - for linear models (LogReg, MLP)
+    3. without_labs_minimal - for tree models without lab data
+    4. without_labs_full - for linear models without lab data
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe with all features.
+    target_col : str
+        Name of target column.
+    output_dir : Path, optional
+        Directory to save datasets. If None, datasets are not saved.
+    max_missing_rate : float
+        For 'full' imputation, remove features with missing rate > this threshold.
+
+    Returns
+    -------
+    dict
+        Dictionary mapping dataset name to (X, y, metadata) tuple.
+    """
+    datasets = {}
+
+    # Define all 4 combinations
+    combinations = [
+        ('with_labs', 'minimal'),
+        ('with_labs', 'full'),
+        ('without_labs', 'minimal'),
+        ('without_labs', 'full'),
+    ]
+
+    for feature_set, imputation in combinations:
+        dataset_name = f"{feature_set}_{imputation}"
+        logger.info(f"\n{'='*60}")
+        logger.info(f"Creating dataset: {dataset_name}")
+        logger.info(f"{'='*60}")
+
+        X, y, metadata = prepare_modeling_data(
+            df=df,
+            feature_set=feature_set,
+            imputation=imputation,
+            target_col=target_col,
+            max_missing_rate=max_missing_rate,
+        )
+
+        datasets[dataset_name] = (X, y, metadata)
+
+        # Log summary
+        logger.info(f"  Shape: {X.shape}")
+        logger.info(f"  Has NaN: {metadata['has_nan']}")
+        if metadata['removed_high_missing']:
+            logger.info(f"  Removed {len(metadata['removed_high_missing'])} high-missing features")
+
+    # Save if output directory provided
+    if output_dir is not None:
+        output_dir = Path(output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        for name, (X, y, metadata) in datasets.items():
+            X.to_parquet(output_dir / f"X_{name}.parquet")
+            y.to_frame().to_parquet(output_dir / f"y_{name}.parquet")
+
+            # Save metadata
+            import json
+            with open(output_dir / f"metadata_{name}.json", 'w') as f:
+                # Convert any non-serializable items
+                meta_save = {k: v for k, v in metadata.items()}
+                json.dump(meta_save, f, indent=2, default=str)
+
+        logger.info(f"\nSaved all datasets to {output_dir}")
+
+    return datasets
