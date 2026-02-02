@@ -1,0 +1,279 @@
+{
+  "classification": {
+    "validation": {
+      "LightGBM (with labs)": {
+        "accuracy": 0.6495726495726496,
+        "f1_macro": 0.6313493725471946,
+        "f1_weighted": 0.6535636028716209,
+        "precision_macro": 0.626131380445759,
+        "recall_macro": 0.6410495323604642,
+        "precision_No Diabetes": 0.7808398950131233,
+        "recall_No Diabetes": 0.6975381008206331,
+        "f1_No Diabetes": 0.7368421052631579,
+        "precision_Prediabetes": 0.5490848585690515,
+        "recall_Prediabetes": 0.5799648506151143,
+        "f1_Prediabetes": 0.5641025641025641,
+        "precision_Diabetes": 0.548469387755102,
+        "recall_Diabetes": 0.6456456456456456,
+        "f1_Diabetes": 0.593103448275862,
+        "roc_auc_ovr": 0.8274373809786776,
+        "roc_auc_ovo": 0.8258306714381315
+      },
+      "LightGBM (without labs)": {
+        "accuracy": 0.6011396011396012,
+        "f1_macro": 0.5813960545726562,
+        "f1_weighted": 0.603946422171469,
+        "precision_macro": 0.5748839409102301,
+        "recall_macro": 0.5951303920654316,
+        "precision_No Diabetes": 0.7403100775193798,
+        "recall_No Diabetes": 0.671746776084408,
+        "f1_No Diabetes": 0.7043638598647818,
+        "precision_Prediabetes": 0.4855072463768116,
+        "recall_Prediabetes": 0.4710017574692443,
+        "f1_Prediabetes": 0.47814451382694023,
+        "precision_Diabetes": 0.4988344988344988,
+        "recall_Diabetes": 0.6426426426426426,
+        "f1_Diabetes": 0.5616797900262467,
+        "roc_auc_ovr": 0.778498371867415,
+        "roc_auc_ovo": 0.7815747372959899
+      },
+      "MLP (with labs)": {
+        "accuracy": 0.611965811965812,
+        "f1_macro": 0.5703060417099762,
+        "f1_weighted": 0.6033184673575807,
+        "precision_macro": 0.5820086016537673,
+        "recall_macro": 0.5648718417628725,
+        "precision_No Diabetes": 0.6795918367346939,
+        "recall_No Diabetes": 0.7807737397420867,
+        "f1_No Diabetes": 0.7266775777414075,
+        "precision_Prediabetes": 0.508130081300813,
+        "recall_Prediabetes": 0.43936731107205623,
+        "f1_Prediabetes": 0.471253534401508,
+        "precision_Diabetes": 0.558303886925795,
+        "recall_Diabetes": 0.4744744744744745,
+        "f1_Diabetes": 0.512987012987013,
+        "roc_auc_ovr": 0.7733761820545627,
+        "roc_auc_ovo": 0.7684578658686378
+      },
+      "MLP (without labs)": {
+        "accuracy": 0.5846153846153846,
+        "f1_macro": 0.54856152657731,
+        "f1_weighted": 0.5797987032986406,
+        "precision_macro": 0.5509200447900525,
+        "recall_macro": 0.5478254004637677,
+        "precision_No Diabetes": 0.6753528773072747,
+        "recall_No Diabetes": 0.7291910902696366,
+        "f1_No Diabetes": 0.7012401352874859,
+        "precision_Prediabetes": 0.46966731898238745,
+        "recall_Prediabetes": 0.421792618629174,
+        "f1_Prediabetes": 0.4444444444444444,
+        "precision_Diabetes": 0.5077399380804953,
+        "recall_Diabetes": 0.4924924924924925,
+        "f1_Diabetes": 0.5,
+        "roc_auc_ovr": 0.751589998800295,
+        "roc_auc_ovo": 0.7473454639623047
+      }
+    },
+    "test": {
+      "LightGBM (with labs)": {
+        "accuracy": 0.6301994301994301,
+        "f1_macro": 0.6120203522371649,
+        "f1_weighted": 0.6357892931305419,
+        "precision_macro": 0.6074062305913487,
+        "recall_macro": 0.6249321080630817,
+        "precision_No Diabetes": 0.7788461538461539,
+        "recall_No Diabetes": 0.6647127784290738,
+        "f1_No Diabetes": 0.7172675521821632,
+        "precision_Prediabetes": 0.5385878489326765,
+        "recall_Prediabetes": 0.5764499121265377,
+        "f1_Prediabetes": 0.5568760611205433,
+        "precision_Diabetes": 0.5047846889952153,
+        "recall_Diabetes": 0.6336336336336337,
+        "f1_Diabetes": 0.5619174434087882,
+        "roc_auc_ovr": 0.815818368881057,
+        "roc_auc_ovo": 0.8144625504527597
+      },
+      "LightGBM (without labs)": {
+        "accuracy": 0.5652421652421652,
+        "f1_macro": 0.5488061561345804,
+        "f1_weighted": 0.5709141749423507,
+        "precision_macro": 0.54459626327024,
+        "recall_macro": 0.5646042121708487,
+        "precision_No Diabetes": 0.7228412256267409,
+        "recall_No Diabetes": 0.608440797186401,
+        "f1_No Diabetes": 0.6607256524506684,
+        "precision_Prediabetes": 0.4606164383561644,
+        "recall_Prediabetes": 0.4727592267135325,
+        "f1_Prediabetes": 0.4666088464874241,
+        "precision_Diabetes": 0.4503311258278146,
+        "recall_Diabetes": 0.6126126126126126,
+        "f1_Diabetes": 0.5190839694656488,
+        "roc_auc_ovr": 0.7564744638324029,
+        "roc_auc_ovo": 0.7602856577034348
+      },
+      "MLP (with labs)": {
+        "accuracy": 0.5897435897435898,
+        "f1_macro": 0.5496369554308925,
+        "f1_weighted": 0.582022307294542,
+        "precision_macro": 0.5643319139585922,
+        "recall_macro": 0.5422586591643596,
+        "precision_No Diabetes": 0.6486210418794689,
+        "recall_No Diabetes": 0.7444314185228605,
+        "f1_No Diabetes": 0.6932314410480349,
+        "precision_Prediabetes": 0.5009784735812133,
+        "recall_Prediabetes": 0.44991212653778556,
+        "f1_Prediabetes": 0.4740740740740741,
+        "precision_Diabetes": 0.5433962264150943,
+        "recall_Diabetes": 0.43243243243243246,
+        "f1_Diabetes": 0.4816053511705686,
+        "roc_auc_ovr": 0.7462873167991706,
+        "roc_auc_ovo": 0.7438267471541948
+      },
+      "MLP (without labs)": {
+        "accuracy": 0.5686609686609687,
+        "f1_macro": 0.5351968008112066,
+        "f1_weighted": 0.5655008028817896,
+        "precision_macro": 0.5341176368534669,
+        "recall_macro": 0.5377390692241409,
+        "precision_No Diabetes": 0.6666666666666666,
+        "recall_No Diabetes": 0.6987104337631888,
+        "f1_No Diabetes": 0.6823125357756153,
+        "precision_Prediabetes": 0.4625984251968504,
+        "recall_Prediabetes": 0.4130052724077329,
+        "f1_Prediabetes": 0.436397400185701,
+        "precision_Diabetes": 0.4730878186968839,
+        "recall_Diabetes": 0.5015015015015015,
+        "f1_Diabetes": 0.4868804664723032,
+        "roc_auc_ovr": 0.7345536801535774,
+        "roc_auc_ovo": 0.7331033514368667
+      }
+    }
+  },
+  "regression": {
+    "validation": {
+      "LightGBM (with labs)": {
+        "rmse": 0.8430064095924704,
+        "mae": 0.5075366602622358,
+        "r2": 0.34843218922754005,
+        "mse": 0.7106598066139881,
+        "mape": 0.08110498523993896,
+        "residual_mean": -0.0048518137468800335,
+        "residual_std": 0.8429924474853577,
+        "max_error": 7.344165327071889
+      },
+      "LightGBM (without labs)": {
+        "rmse": 0.9080437105024878,
+        "mae": 0.5283619641838507,
+        "r2": 0.24401813622666102,
+        "mse": 0.8245433801831258,
+        "mape": 0.08326757279306507,
+        "residual_mean": -0.005954716645304816,
+        "residual_std": 0.9080241855439755,
+        "max_error": 7.2860272994101365
+      },
+      "MLP (with labs)": {
+        "rmse": 0.9488845929641001,
+        "mae": 0.5974798715426857,
+        "r2": 0.1744855919946916,
+        "mse": 0.9003819707646459,
+        "mape": 0.0957718882917244,
+        "residual_mean": 0.02762452824752442,
+        "residual_std": 0.948482396359441,
+        "max_error": 6.924626519677606
+      },
+      "MLP (without labs)": {
+        "rmse": 1.0085277440344675,
+        "mae": 0.6129599373852368,
+        "r2": 0.06744690608052728,
+        "mse": 1.0171282104872523,
+        "mape": 0.09674529029490106,
+        "residual_mean": 0.08548117992455304,
+        "residual_std": 1.004898591085667,
+        "max_error": 7.308510290640542
+      }
+    },
+    "test": {
+      "LightGBM (with labs)": {
+        "rmse": 0.987887566328828,
+        "mae": 0.5669220018454568,
+        "r2": 0.300874408415193,
+        "mse": 0.9759218437070946,
+        "mape": 0.08789734612323548,
+        "residual_mean": 0.02682405442809592,
+        "residual_std": 0.987523323173247,
+        "max_error": 9.825273696675648
+      },
+      "LightGBM (without labs)": {
+        "rmse": 1.080052673528335,
+        "mae": 0.608966619609664,
+        "r2": 0.16433919364326255,
+        "mse": 1.166513777595704,
+        "mape": 0.09308839187269413,
+        "residual_mean": 0.021794351936548877,
+        "residual_std": 1.0798327573376212,
+        "max_error": 9.83034470542468
+      },
+      "MLP (with labs)": {
+        "rmse": 1.1004285154501583,
+        "mae": 0.649478565883297,
+        "r2": 0.1325112875455855,
+        "mse": 1.210942917615839,
+        "mape": 0.10042239381152744,
+        "residual_mean": 0.09018789738276432,
+        "residual_std": 1.0967265205061447,
+        "max_error": 10.053330884701229
+      },
+      "MLP (without labs)": {
+        "rmse": 1.1627966274709,
+        "mae": 0.6817040003825304,
+        "r2": 0.03139281103508229,
+        "mse": 1.3520959968576993,
+        "mape": 0.10451512936960265,
+        "residual_mean": 0.11481243067367489,
+        "residual_std": 1.1571145589873555,
+        "max_error": 10.15365904847441
+      }
+    }
+  },
+  "best_models": {
+    "classification": "LightGBM (with labs)",
+    "regression": "LightGBM (with labs)"
+  },
+  "hyperparameters": {
+    "lightgbm_cls_with_labs": {
+      "n_estimators": 349,
+      "max_depth": 5,
+      "learning_rate": 0.012413189635294229,
+      "num_leaves": 50,
+      "min_child_samples": 36,
+      "reg_alpha": 0.03685153691188181,
+      "reg_lambda": 0.005470376807480385,
+      "subsample": 0.9436063712881633,
+      "colsample_bytree": 0.7361074625809747
+    },
+    "lightgbm_cls_without_labs": {
+      "n_estimators": 349,
+      "max_depth": 5,
+      "learning_rate": 0.012413189635294229,
+      "num_leaves": 50,
+      "min_child_samples": 36,
+      "reg_alpha": 0.03685153691188181,
+      "reg_lambda": 0.005470376807480385,
+      "subsample": 0.9436063712881633,
+      "colsample_bytree": 0.7361074625809747
+    },
+    "mlp_cls_with_labs": {
+      "hidden_layer_sizes": "(169,)",
+      "activation": "tanh",
+      "alpha": 0.0002920433847181409,
+      "learning_rate": "adaptive",
+      "learning_rate_init": 0.00025081156860452336
+    }
+  },
+  "config": {
+    "n_trials_lightgbm": 10,
+    "n_trials_mlp": 5,
+    "cv_folds": 3,
+    "random_state": 42
+  }
+}

@@ -687,3 +687,137 @@ After fix, LBXGH shows correct values:
 All interim and processed datasets regenerated with correct handling.
 
 ---
+
+## [2026-02-02] - Phase 7: Advanced Models
+
+### Objective
+Train advanced models (LightGBM, MLP) with Bayesian hyperparameter optimization using Optuna, and track experiments with MLflow.
+
+### Implementation
+
+**Notebook created:**
+- `notebooks/07_advanced_models.ipynb` - Complete training pipeline
+
+**Models to train (8 total configurations):**
+
+| Model | Task | Feature Set | Dataset |
+|-------|------|-------------|---------|
+| LightGBM Classifier | Classification | with_labs | minimal (NaN ok) |
+| LightGBM Classifier | Classification | without_labs | minimal (NaN ok) |
+| LightGBM Regressor | Regression | with_labs | minimal (NaN ok) |
+| LightGBM Regressor | Regression | without_labs | minimal (NaN ok) |
+| MLP Classifier | Classification | with_labs | full (no NaN) |
+| MLP Classifier | Classification | without_labs | full (no NaN) |
+| MLP Regressor | Regression | with_labs | full (no NaN) |
+| MLP Regressor | Regression | without_labs | full (no NaN) |
+
+**Hyperparameter tuning strategy:**
+- Optuna with TPE sampler (Bayesian optimization)
+- 100 trials for LightGBM (~1 hour each)
+- 50 trials for MLP (~1.5 hours each)
+- 3-fold cross-validation for faster iteration
+
+**MLflow experiment tracking:**
+- Experiment name: `diabetes-prediction-phase7`
+- Logs: parameters, metrics, models, tags
+- View UI: `mlflow ui --backend-store-uri mlruns`
+
+**LightGBM hyperparameters tuned:**
+- n_estimators (100-500)
+- max_depth (3-10)
+- learning_rate (0.01-0.3, log scale)
+- num_leaves (15-127)
+- min_child_samples (5-100)
+- reg_alpha, reg_lambda (1e-8 to 10, log scale)
+- subsample, colsample_bytree (0.5-1.0)
+
+**MLP hyperparameters tuned:**
+- n_layers (1-3)
+- n_units per layer (32-256)
+- activation (relu, tanh)
+- alpha (L2 regularization, 1e-5 to 0.1)
+- learning_rate (constant, adaptive)
+- learning_rate_init (1e-4 to 1e-2)
+
+### Configuration
+
+```python
+RANDOM_STATE = 42
+CV_FOLDS = 3
+N_TRIALS_LIGHTGBM = 10   # Quick test (use 100 for full run)
+N_TRIALS_MLP = 5         # Quick test (use 50 for full run)
+```
+
+### Results
+
+**Classification (Test Set):**
+
+| Model | F1 Macro | ROC AUC | Accuracy |
+|-------|----------|---------|----------|
+| **LightGBM (with labs)** | **0.612** | **0.816** | 0.630 |
+| LightGBM (without labs) | 0.549 | 0.756 | 0.565 |
+| MLP (with labs) | 0.550 | 0.746 | 0.590 |
+| MLP (without labs) | 0.535 | 0.735 | 0.569 |
+
+**Regression (Test Set):**
+
+| Model | RMSE | R² | MAE |
+|-------|------|-----|-----|
+| **LightGBM (with labs)** | **0.988** | **0.301** | 0.567 |
+| LightGBM (without labs) | 1.080 | 0.164 | 0.609 |
+| MLP (with labs) | 1.100 | 0.133 | 0.649 |
+| MLP (without labs) | 1.163 | 0.031 | 0.682 |
+
+**Improvement vs Phase 6 Baselines:**
+
+| Metric | Baseline (LogReg/Ridge) | LightGBM | Improvement |
+|--------|-------------------------|----------|-------------|
+| F1 Macro | 0.544 | 0.612 | **+12.5%** |
+| ROC AUC | 0.749 | 0.816 | **+8.9%** |
+| R² (regression) | 0.069 | 0.301 | **+336%** |
+
+**Best LightGBM Hyperparameters (classification, with labs):**
+```python
+n_estimators = 349
+max_depth = 5
+learning_rate = 0.0124
+num_leaves = 50
+min_child_samples = 36
+reg_alpha = 0.037
+reg_lambda = 0.005
+subsample = 0.944
+colsample_bytree = 0.736
+```
+
+### Key Findings
+
+1. **LightGBM outperforms MLP** on both classification and regression tasks (common for tabular data)
+2. **Labs matter significantly**: ~6% F1 drop and ~14% R² drop without laboratory features
+3. **Regression improved dramatically**: R² from 0.07 (baseline) to 0.30 (LightGBM)
+4. **Classification per-class performance**:
+   - No Diabetes: F1 = 0.72 (best)
+   - Prediabetes: F1 = 0.56 (hardest to predict)
+   - Diabetes: F1 = 0.56
+
+### Artifacts Generated
+
+| Artifact | Location |
+|----------|----------|
+| Models | `models/advanced/{classification,regression}/` |
+| Results | `models/advanced/results_summary.json` |
+| Figures | `reports/figures/phase7_*.png` |
+| MLflow | `mlruns/` (view with `mlflow ui`) |
+
+### Learnings
+
+1. **Optuna TPE sampler** efficiently explores hyperparameter space - even 10 trials found good configurations
+2. **LightGBM's native NaN handling** is valuable - no need for full imputation
+3. **MLP requires more trials** to find good architectures; sklearn's MLP is also limited compared to deep learning frameworks
+4. **Class imbalance handling** via class weights helped balance predictions across all 3 classes
+
+### Next Steps
+- **Phase 7.1 (Optional)**: Deep Learning with TensorFlow/PyTorch
+- **Phase 8**: Model Evaluation & Comparison (detailed error analysis)
+- **Phase 9**: Model Interpretation & Insights (SHAP, feature importance)
+
+---
