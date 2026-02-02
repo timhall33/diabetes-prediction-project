@@ -821,3 +821,121 @@ colsample_bytree = 0.736
 - **Phase 9**: Model Interpretation & Insights (SHAP, feature importance)
 
 ---
+
+## [2026-02-02] - Phase 7.1: Deep Learning with PyTorch
+
+### Objective
+Build neural networks from scratch using PyTorch, exploring regression, learning rate scheduling, and hyperparameter tuning with Optuna.
+
+### Implementation
+
+**Notebook created:**
+- `notebooks/07a_deep_learning_pytorch.ipynb` - Comprehensive PyTorch tutorial with 8 parts
+
+**Topics covered:**
+| Part | Topic | Key Concepts |
+|------|-------|--------------|
+| 1-3 | Basic Classification | Tensors, DataLoaders, nn.Module, training loop |
+| 4-5 | Evaluation & Saving | Metrics, confusion matrix, model serialization |
+| 6 | Regression | MSELoss, HbA1c prediction, R² metric |
+| 7 | LR Scheduling | OneCycleLR, warmup, annealing comparison |
+| 8 | Hyperparameter Tuning | Optuna, TPE sampler, pruning, FlexibleNN |
+
+**Base architecture:**
+```
+Input (96 features)
+    ↓
+Linear(128) → BatchNorm → ReLU → Dropout(0.3)
+    ↓
+Linear(64) → BatchNorm → ReLU → Dropout(0.3)
+    ↓
+Linear(32) → BatchNorm → ReLU → Dropout(0.3)
+    ↓
+Output (3 classes or 1 regression value)
+```
+
+### Results
+
+**Classification (Test Set):**
+
+| Model | F1 Macro | ROC AUC | Accuracy |
+|-------|----------|---------|----------|
+| **LightGBM (with labs)** | **0.612** | **0.816** | **0.630** |
+| MLP sklearn (with labs) | 0.550 | 0.746 | 0.590 |
+| PyTorch (manual) | 0.560 | 0.755 | 0.573 |
+| PyTorch (OneCycleLR) | 0.552 | 0.749 | 0.557 |
+| PyTorch (Optuna-tuned) | 0.562 | 0.759 | 0.572 |
+
+**Key observations:**
+- Optuna-tuned PyTorch achieved best neural network performance (F1=0.562)
+- OneCycleLR didn't help significantly for this dataset/architecture
+- All PyTorch variants outperformed sklearn MLP
+- LightGBM still wins by ~9% F1 margin
+
+**Regression (HbA1c prediction):**
+- PyTorch regression model trained successfully
+- Compared against LightGBM baseline (R²=0.30)
+- Neural network regression is harder than classification for this task
+
+### Techniques Explored
+
+| Technique | Implementation | Impact |
+|-----------|---------------|--------|
+| **BatchNorm** | After each linear layer | Stabilizes training |
+| **Dropout** | 0.3 rate | Prevents overfitting |
+| **Class weights** | Inverse frequency | Balances classes |
+| **OneCycleLR** | 30% warmup, cosine decay | Minimal impact here |
+| **Optuna** | 20 trials, TPE sampler | +0.2% F1 vs manual |
+
+### Optuna Search Space
+
+```python
+n_layers: 1-4
+hidden_size: 32-256 (step=32)
+dropout_rate: 0.1-0.5
+learning_rate: 1e-4 to 1e-2 (log scale)
+batch_size: [32, 64, 128]
+```
+
+### Key Findings
+
+1. **LightGBM dominates for tabular data** - ~9% F1 advantage over best neural network
+2. **Optuna helps but marginally** - Only +0.2% F1 over manual architecture
+3. **LR scheduling mixed results** - OneCycleLR didn't improve this model
+4. **Neural networks need more data** - ~8K samples favors gradient boosting
+5. **PyTorch > sklearn MLP** - Custom architecture with BatchNorm/Dropout helps
+
+### Concepts Learned
+
+| Concept | Description |
+|---------|-------------|
+| **Tensors** | GPU-accelerated arrays with gradient tracking |
+| **nn.Module** | PyTorch's base class for neural networks |
+| **Training loop** | Forward → Loss → Backward → Update |
+| **BatchNorm** | Normalizes layer inputs, stabilizes training |
+| **Dropout** | Randomly zeros neurons to prevent overfitting |
+| **OneCycleLR** | Learning rate warmup then cosine decay |
+| **Optuna** | Bayesian hyperparameter optimization |
+| **FlexibleNN** | Dynamic architecture for tuning |
+
+### Learnings
+
+1. **BatchNorm requires batch_size > 1** - Use `drop_last=True` in DataLoader
+2. **NumPy 2.x incompatible with PyTorch <2.4** - Upgrade PyTorch or downgrade NumPy
+3. **MPS (Apple Silicon) works well** - Good speedup over CPU
+4. **Class weights essential** - Without them, model ignores minority classes
+5. **More trials = better tuning** - 20 trials is minimal; 50-100 recommended
+
+### When to Use Neural Networks
+
+| Use Case | Recommendation |
+|----------|----------------|
+| Tabular, <50K samples | Gradient Boosting |
+| Tabular, >100K samples | Can try neural networks |
+| Images, text, audio | Neural networks |
+
+### Next Steps
+- **Phase 8**: Model Evaluation & Comparison (detailed error analysis)
+- **Phase 9**: Model Interpretation & Insights (SHAP, feature importance)
+
+---
