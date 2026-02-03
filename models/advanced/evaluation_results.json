@@ -1,0 +1,492 @@
+{
+  "classification": {
+    "LightGBM (with labs)": {
+      "accuracy": 0.6301994301994301,
+      "f1_macro": 0.6120203522371649,
+      "f1_weighted": 0.6357892931305419,
+      "precision_macro": 0.6074062305913487,
+      "recall_macro": 0.6249321080630817,
+      "precision_No Diabetes": 0.7788461538461539,
+      "recall_No Diabetes": 0.6647127784290738,
+      "f1_No Diabetes": 0.7172675521821632,
+      "precision_Prediabetes": 0.5385878489326765,
+      "recall_Prediabetes": 0.5764499121265377,
+      "f1_Prediabetes": 0.5568760611205433,
+      "precision_Diabetes": 0.5047846889952153,
+      "recall_Diabetes": 0.6336336336336337,
+      "f1_Diabetes": 0.5619174434087882,
+      "roc_auc_ovr": 0.815818368881057,
+      "roc_auc_ovo": 0.8144625504527597
+    },
+    "LightGBM (without labs)": {
+      "accuracy": 0.5652421652421652,
+      "f1_macro": 0.5488061561345804,
+      "f1_weighted": 0.5709141749423507,
+      "precision_macro": 0.54459626327024,
+      "recall_macro": 0.5646042121708487,
+      "precision_No Diabetes": 0.7228412256267409,
+      "recall_No Diabetes": 0.608440797186401,
+      "f1_No Diabetes": 0.6607256524506684,
+      "precision_Prediabetes": 0.4606164383561644,
+      "recall_Prediabetes": 0.4727592267135325,
+      "f1_Prediabetes": 0.4666088464874241,
+      "precision_Diabetes": 0.4503311258278146,
+      "recall_Diabetes": 0.6126126126126126,
+      "f1_Diabetes": 0.5190839694656488,
+      "roc_auc_ovr": 0.7564744638324029,
+      "roc_auc_ovo": 0.7602856577034348
+    },
+    "MLP (with labs)": {
+      "accuracy": 0.5897435897435898,
+      "f1_macro": 0.5496369554308925,
+      "f1_weighted": 0.582022307294542,
+      "precision_macro": 0.5643319139585922,
+      "recall_macro": 0.5422586591643596,
+      "precision_No Diabetes": 0.6486210418794689,
+      "recall_No Diabetes": 0.7444314185228605,
+      "f1_No Diabetes": 0.6932314410480349,
+      "precision_Prediabetes": 0.5009784735812133,
+      "recall_Prediabetes": 0.44991212653778556,
+      "f1_Prediabetes": 0.4740740740740741,
+      "precision_Diabetes": 0.5433962264150943,
+      "recall_Diabetes": 0.43243243243243246,
+      "f1_Diabetes": 0.4816053511705686,
+      "roc_auc_ovr": 0.7462873167991706,
+      "roc_auc_ovo": 0.7438267471541948
+    },
+    "MLP (without labs)": {
+      "accuracy": 0.5686609686609687,
+      "f1_macro": 0.5351968008112066,
+      "f1_weighted": 0.5655008028817896,
+      "precision_macro": 0.5341176368534669,
+      "recall_macro": 0.5377390692241409,
+      "precision_No Diabetes": 0.6666666666666666,
+      "recall_No Diabetes": 0.6987104337631888,
+      "f1_No Diabetes": 0.6823125357756153,
+      "precision_Prediabetes": 0.4625984251968504,
+      "recall_Prediabetes": 0.4130052724077329,
+      "f1_Prediabetes": 0.436397400185701,
+      "precision_Diabetes": 0.4730878186968839,
+      "recall_Diabetes": 0.5015015015015015,
+      "f1_Diabetes": 0.4868804664723032,
+      "roc_auc_ovr": 0.7345536801535774,
+      "roc_auc_ovo": 0.7331033514368667
+    },
+    "PyTorch (with labs)": {
+      "accuracy": 0.5726495726495726,
+      "f1_macro": 0.5595696986479642,
+      "f1_weighted": 0.5781004901630299,
+      "precision_macro": 0.5550633059571297,
+      "recall_macro": 0.578567365301666,
+      "precision_No Diabetes": 0.7303851640513552,
+      "recall_No Diabetes": 0.6002344665885111,
+      "f1_No Diabetes": 0.6589446589446589,
+      "precision_Prediabetes": 0.4702886247877759,
+      "recall_Prediabetes": 0.4868189806678383,
+      "f1_Prediabetes": 0.4784110535405872,
+      "precision_Diabetes": 0.4645161290322581,
+      "recall_Diabetes": 0.6486486486486487,
+      "f1_Diabetes": 0.5413533834586466,
+      "roc_auc_ovr": 0.7549330307135603,
+      "roc_auc_ovo": 0.7614059593499469
+    }
+  },
+  "regression": {
+    "LightGBM (with labs)": {
+      "rmse": 0.987887566328828,
+      "mae": 0.5669220018454568,
+      "r2": 0.300874408415193,
+      "mse": 0.9759218437070946,
+      "mape": 0.08789734612323548,
+      "residual_mean": 0.02682405442809592,
+      "residual_std": 0.987523323173247,
+      "max_error": 9.825273696675648
+    },
+    "LightGBM (without labs)": {
+      "rmse": 1.080052673528335,
+      "mae": 0.608966619609664,
+      "r2": 0.16433919364326255,
+      "mse": 1.166513777595704,
+      "mape": 0.09308839187269413,
+      "residual_mean": 0.021794351936548877,
+      "residual_std": 1.0798327573376212,
+      "max_error": 9.83034470542468
+    },
+    "MLP (with labs)": {
+      "rmse": 1.1004285154501583,
+      "mae": 0.649478565883297,
+      "r2": 0.1325112875455855,
+      "mse": 1.210942917615839,
+      "mape": 0.10042239381152744,
+      "residual_mean": 0.09018789738276432,
+      "residual_std": 1.0967265205061447,
+      "max_error": 10.053330884701229
+    },
+    "MLP (without labs)": {
+      "rmse": 1.1627966274709,
+      "mae": 0.6817040003825304,
+      "r2": 0.03139281103508229,
+      "mse": 1.3520959968576993,
+      "mape": 0.10451512936960265,
+      "residual_mean": 0.11481243067367489,
+      "residual_std": 1.1571145589873555,
+      "max_error": 10.15365904847441
+    }
+  },
+  "feature_importance": {
+    "shap_top_20": [
+      {
+        "Feature": "MCQ300C",
+        "Mean |SHAP|": 0.13454852455083008,
+        "Category": "Non-Modifiable"
+      },
+      {
+        "Feature": "TG_HDL_RATIO",
+        "Mean |SHAP|": 0.11445110332583547,
+        "Category": "Lab Value"
+      },
+      {
+        "Feature": "ACR_RATIO",
+        "Mean |SHAP|": 0.10901125263158129,
+        "Category": "Lab Value"
+      },
+      {
+        "Feature": "WHD130",
+        "Mean |SHAP|": 0.10181706371662978,
+        "Category": "Other"
+      },
+      {
+        "Feature": "WHD110",
+        "Mean |SHAP|": 0.09445176577984038,
+        "Category": "Other"
+      },
+      {
+        "Feature": "BPQ090D",
+        "Mean |SHAP|": 0.0895178437142956,
+        "Category": "Other"
+      },
+      {
+        "Feature": "LBXSGTSI",
+        "Mean |SHAP|": 0.08716551971874464,
+        "Category": "Lab Value"
+      },
+      {
+        "Feature": "RIDAGEYR",
+        "Mean |SHAP|": 0.08192849353313077,
+        "Category": "Non-Modifiable"
+      },
+      {
+        "Feature": "LBDLDL",
+        "Mean |SHAP|": 0.07710364555062849,
+        "Category": "Lab Value"
+      },
+      {
+        "Feature": "LBXPLTSI",
+        "Mean |SHAP|": 0.0718303691972892,
+        "Category": "Lab Value"
+      },
+      {
+        "Feature": "LBDHDD",
+        "Mean |SHAP|": 0.0711279220629147,
+        "Category": "Lab Value"
+      },
+      {
+        "Feature": "WAIST_HEIGHT_RATIO",
+        "Mean |SHAP|": 0.06683443283936824,
+        "Category": "Modifiable"
+      },
+      {
+        "Feature": "BPQ100D",
+        "Mean |SHAP|": 0.06313308598944443,
+        "Category": "Other"
+      },
+      {
+        "Feature": "WEIGHT_FROM_MAX",
+        "Mean |SHAP|": 0.05830116897848306,
+        "Category": "Modifiable"
+      },
+      {
+        "Feature": "CDQ010",
+        "Mean |SHAP|": 0.055148074722234215,
+        "Category": "Other"
+      },
+      {
+        "Feature": "BMXWAIST",
+        "Mean |SHAP|": 0.04846856077445864,
+        "Category": "Modifiable"
+      },
+      {
+        "Feature": "LBXTR",
+        "Mean |SHAP|": 0.048372678405338355,
+        "Category": "Lab Value"
+      },
+      {
+        "Feature": "BPQ040A",
+        "Mean |SHAP|": 0.040719846961400345,
+        "Category": "Other"
+      },
+      {
+        "Feature": "LBXTC",
+        "Mean |SHAP|": 0.03447478645246451,
+        "Category": "Lab Value"
+      },
+      {
+        "Feature": "CARB_FIBER_RATIO",
+        "Mean |SHAP|": 0.029068182892816995,
+        "Category": "Modifiable"
+      }
+    ],
+    "permutation_top_20": [
+      {
+        "Feature": "WEIGHT_FROM_MAX",
+        "Importance": 0.018319682943025117,
+        "Std": 0.010307994700405323
+      },
+      {
+        "Feature": "MCQ300C",
+        "Importance": 0.018066026747891772,
+        "Std": 0.00977683565860828
+      },
+      {
+        "Feature": "LBXTC",
+        "Importance": 0.01341702470909838,
+        "Std": 0.007219644977338233
+      },
+      {
+        "Feature": "LBDHDD",
+        "Importance": 0.01140421905068314,
+        "Std": 0.0059904982903277
+      },
+      {
+        "Feature": "RIDAGEYR",
+        "Importance": 0.010212499262637953,
+        "Std": 0.008513322936769813
+      },
+      {
+        "Feature": "LBXSASSI",
+        "Importance": 0.010197023861079624,
+        "Std": 0.004795249011966217
+      },
+      {
+        "Feature": "BPQ100D",
+        "Importance": 0.010027796003603085,
+        "Std": 0.0035833790299569374
+      },
+      {
+        "Feature": "TG_HDL_RATIO",
+        "Importance": 0.00887666414580115,
+        "Std": 0.005954636344519777
+      },
+      {
+        "Feature": "DR1TSUGR",
+        "Importance": 0.008852921622551746,
+        "Std": 0.00447636299098689
+      },
+      {
+        "Feature": "WEIGHT_CHANGE_10YR",
+        "Importance": 0.008279045268654694,
+        "Std": 0.004939366520349079
+      },
+      {
+        "Feature": "SUGAR_CARB_RATIO",
+        "Importance": 0.0073963246161891875,
+        "Std": 0.0053603281917107845
+      },
+      {
+        "Feature": "WHD110",
+        "Importance": 0.0072109321402125115,
+        "Std": 0.008714188584317628
+      },
+      {
+        "Feature": "DR1TALCO",
+        "Importance": 0.0067276656210436105,
+        "Std": 0.003893545241188323
+      },
+      {
+        "Feature": "LBXSATSI",
+        "Importance": 0.006615910190089091,
+        "Std": 0.004067760849559678
+      },
+      {
+        "Feature": "ACR_RATIO",
+        "Importance": 0.005842284451961688,
+        "Std": 0.005844790172836409
+      },
+      {
+        "Feature": "CARB_FIBER_RATIO",
+        "Importance": 0.005432816602150903,
+        "Std": 0.004853706830534246
+      },
+      {
+        "Feature": "LBDLDL",
+        "Importance": 0.004835545447640244,
+        "Std": 0.0061508717087094805
+      },
+      {
+        "Feature": "LBXSGTSI",
+        "Importance": 0.004357139276140354,
+        "Std": 0.006023440773143168
+      },
+      {
+        "Feature": "DR1TPROT",
+        "Importance": 0.004216340457802836,
+        "Std": 0.0016836258344823877
+      },
+      {
+        "Feature": "DR1_320Z",
+        "Importance": 0.004089078364338661,
+        "Std": 0.0017514400526072883
+      }
+    ],
+    "importance_by_category": {
+      "Total Importance": {
+        "Lab Value": 0.7557986434808251,
+        "Modifiable": 0.5380609543714635,
+        "Other": 0.5191086874115695,
+        "Non-Modifiable": 0.2221696098284021
+      },
+      "Mean Importance": {
+        "Lab Value": 0.04723741521755157,
+        "Modifiable": 0.009608231328061849,
+        "Other": 0.01922624768190998,
+        "Non-Modifiable": 0.02221696098284021
+      },
+      "N Features": {
+        "Lab Value": 16,
+        "Modifiable": 56,
+        "Other": 27,
+        "Non-Modifiable": 10
+      }
+    }
+  },
+  "subgroup_analysis": {
+    "by_age": [
+      {
+        "Subgroup": "Middle (40-59)",
+        "N": 576,
+        "Accuracy": 0.6145833333333334,
+        "F1 Macro": 0.604108845023504,
+        "ROC AUC": 0.7873970043238554
+      },
+      {
+        "Subgroup": "Older (60+)",
+        "N": 566,
+        "Accuracy": 0.5388692579505301,
+        "F1 Macro": 0.5155897071874326,
+        "ROC AUC": 0.7684088643219212
+      },
+      {
+        "Subgroup": "Young (18-39)",
+        "N": 584,
+        "Accuracy": 0.7208904109589042,
+        "F1 Macro": 0.4873481512675764,
+        "ROC AUC": 0.8014641823047226
+      }
+    ],
+    "by_gender": [
+      {
+        "Subgroup": "Female",
+        "N": 906,
+        "Accuracy": 0.6313465783664459,
+        "F1 Macro": 0.608300791602676,
+        "ROC AUC": 0.8172274723070799
+      },
+      {
+        "Subgroup": "Male",
+        "N": 849,
+        "Accuracy": 0.6289752650176679,
+        "F1 Macro": 0.6153047900344589,
+        "ROC AUC": 0.8146064490064712
+      }
+    ],
+    "by_bmi": [
+      {
+        "Subgroup": "Normal (<25)",
+        "N": 462,
+        "Accuracy": 0.6904761904761905,
+        "F1 Macro": 0.5912776217553106,
+        "ROC AUC": 0.8253981334876226
+      },
+      {
+        "Subgroup": "Obese (30+)",
+        "N": 648,
+        "Accuracy": 0.5925925925925926,
+        "F1 Macro": 0.5935703316493782,
+        "ROC AUC": 0.7813165710385429
+      },
+      {
+        "Subgroup": "Overweight (25-30)",
+        "N": 537,
+        "Accuracy": 0.5921787709497207,
+        "F1 Macro": 0.5818457648546144,
+        "ROC AUC": 0.7995624617392093
+      }
+    ],
+    "by_race": [
+      {
+        "Subgroup": "Mexican American",
+        "N": 274,
+        "Accuracy": 0.6313868613138686,
+        "F1 Macro": 0.6157870654322068,
+        "ROC AUC": 0.8200546910350207
+      },
+      {
+        "Subgroup": "Non-Hispanic Asian",
+        "N": 220,
+        "Accuracy": 0.6727272727272727,
+        "F1 Macro": 0.6098240785710431,
+        "ROC AUC": 0.8275582848471886
+      },
+      {
+        "Subgroup": "Non-Hispanic Black",
+        "N": 406,
+        "Accuracy": 0.603448275862069,
+        "F1 Macro": 0.5926981755818779,
+        "ROC AUC": 0.7859436619058698
+      },
+      {
+        "Subgroup": "Non-Hispanic White",
+        "N": 589,
+        "Accuracy": 0.6230899830220713,
+        "F1 Macro": 0.6065293356105926,
+        "ROC AUC": 0.8303980912752446
+      },
+      {
+        "Subgroup": "Other Hispanic",
+        "N": 189,
+        "Accuracy": 0.6666666666666666,
+        "F1 Macro": 0.6661350345560871,
+        "ROC AUC": 0.8442379354165208
+      },
+      {
+        "Subgroup": "Other/Multi-Racial",
+        "N": 77,
+        "Accuracy": 0.6103896103896104,
+        "F1 Macro": 0.5349973024391629,
+        "ROC AUC": 0.8330572891094974
+      }
+    ]
+  },
+  "labs_comparison": [
+    {
+      "Model": "LightGBM",
+      "F1 (with labs)": 0.6120203522371649,
+      "F1 (without labs)": 0.5488061561345804,
+      "F1 Drop": 0.0632141961025845,
+      "F1 Drop %": 10.328773523872663,
+      "AUC (with labs)": 0.815818368881057,
+      "AUC (without labs)": 0.7564744638324029,
+      "AUC Drop": 0.059343905048654055
+    },
+    {
+      "Model": "MLP",
+      "F1 (with labs)": 0.5496369554308925,
+      "F1 (without labs)": 0.5351968008112066,
+      "F1 Drop": 0.014440154619685952,
+      "F1 Drop %": 2.6272168341310804,
+      "AUC (with labs)": 0.7462873167991706,
+      "AUC (without labs)": 0.7345536801535774,
+      "AUC Drop": 0.011733636645593237
+    }
+  ]
+}

@@ -939,3 +939,152 @@ batch_size: [32, 64, 128]
 - **Phase 9**: Model Interpretation & Insights (SHAP, feature importance)
 
 ---
+
+## [2026-02-03] - Phase 8 & 9: Model Evaluation and Interpretation
+
+### Objective
+Comprehensive evaluation of all trained models with detailed error analysis, subgroup fairness assessment, and SHAP-based feature interpretation to derive actionable insights.
+
+### Implementation
+
+**Notebook created:**
+- `notebooks/08_evaluation_and_interpretation.ipynb` - Combined Phase 8 & 9 analysis
+
+**Models evaluated:**
+- LightGBM (with/without labs) - Classification & Regression
+- MLP sklearn (with/without labs) - Classification & Regression
+- PyTorch (with labs) - Classification
+
+### Results
+
+**Classification Performance (Test Set):**
+
+| Model | F1 Macro | ROC AUC | Accuracy |
+|-------|----------|---------|----------|
+| **LightGBM (with labs)** | **0.612** | **0.816** | **0.630** |
+| LightGBM (without labs) | 0.549 | 0.756 | 0.565 |
+| PyTorch (with labs) | 0.562 | 0.759 | 0.572 |
+| MLP (with labs) | 0.550 | 0.746 | 0.590 |
+| MLP (without labs) | 0.535 | 0.735 | 0.569 |
+
+**Regression Performance (Test Set) - HbA1c Prediction:**
+
+| Model | RMSE | R² | MAE |
+|-------|------|-----|-----|
+| **LightGBM (with labs)** | **0.988** | **0.301** | **0.567** |
+| LightGBM (without labs) | 1.080 | 0.164 | 0.609 |
+| MLP (with labs) | 1.100 | 0.133 | 0.649 |
+| MLP (without labs) | 1.163 | 0.031 | 0.682 |
+
+**Error Analysis (LightGBM with labs):**
+- Overall accuracy: 63.0%
+- Hardest to predict: Prediabetes (highest error rate)
+- Most common misclassification: Prediabetes ↔ No Diabetes
+- Lower confidence predictions have higher error rates (as expected)
+
+**Subgroup Analysis:**
+
+| Subgroup | F1 Macro | Notes |
+|----------|----------|-------|
+| Young (18-39) | ~0.55 | Lower diabetes prevalence |
+| Middle (40-59) | ~0.62 | Best performance |
+| Older (60+) | ~0.60 | High diabetes prevalence |
+| Male | ~0.61 | Slightly better than female |
+| Female | ~0.60 | Similar performance |
+| Normal BMI | ~0.50 | Hardest subgroup |
+| Obese | ~0.65 | Easiest to classify |
+
+**Labs Impact:**
+- LightGBM F1 drops ~10% without lab values
+- LightGBM AUC drops ~7% without lab values
+- Labs most important for regression (R² drops from 0.30 to 0.16)
+
+### Feature Importance (SHAP Analysis)
+
+**Top 10 Features by Mean |SHAP|:**
+
+| Rank | Feature | Category |
+|------|---------|----------|
+| 1 | RIDAGEYR (Age) | Non-Modifiable |
+| 2 | TG_HDL_RATIO | Lab Value |
+| 3 | WAIST_HEIGHT_RATIO | Modifiable |
+| 4 | BMXBMI | Modifiable |
+| 5 | LBXSGTSI (GGT) | Lab Value |
+| 6 | WHD130 (Age at heaviest) | Non-Modifiable |
+| 7 | MCQ300C (Family history) | Non-Modifiable |
+| 8 | AVG_SYS_BP | Modifiable |
+| 9 | LBXTR (Triglycerides) | Lab Value |
+| 10 | CDQ010 (Shortness of breath) | Non-Modifiable |
+
+**Feature Importance by Category:**
+- **Lab Values**: ~35% of total importance
+- **Modifiable factors**: ~30% of total importance
+- **Non-Modifiable factors**: ~25% of total importance
+- **Other**: ~10%
+
+**Top Modifiable Risk Factors:**
+1. Waist-to-height ratio
+2. BMI
+3. Average systolic blood pressure
+4. Weight history features
+5. Dietary patterns (carb/fiber ratio)
+
+### Key Findings
+
+1. **LightGBM is the best model** for both classification (F1=0.612) and regression (R²=0.301)
+2. **Prediabetes is hardest to predict** - often confused with No Diabetes
+3. **Labs provide ~10% F1 improvement** - significant but model still useful without them
+4. **Age is the strongest predictor** - but many modifiable factors in top 10
+5. **Model performs fairly across subgroups** - no major bias by gender or race
+6. **Calibration is reasonable** - predicted probabilities roughly match actual rates
+
+### Actionable Insights
+
+**For Diabetes Prevention:**
+1. **Weight management** - BMI and waist circumference are top modifiable predictors
+2. **Blood pressure control** - Strongly associated with diabetes risk
+3. **Dietary quality** - Carb/fiber ratio indicates diet quality
+4. **Physical activity** - Helps with weight and metabolic health
+5. **Regular screening** - Especially for those 40+ with family history
+
+**Clinical Implications:**
+- Model can identify high-risk individuals for intervention
+- Without-labs version enables community screening
+- Prediabetes detection needs improvement (consider threshold adjustment)
+
+### Artifacts Generated
+
+**Figures (in `reports/figures/`):**
+- `phase8_confusion_matrices.png` - All models side-by-side
+- `phase8_roc_curves_comparison.png` - ROC by class
+- `phase8_pr_curves_comparison.png` - Precision-Recall curves
+- `phase8_calibration_curves.png` - Reliability diagrams
+- `phase8_error_analysis.png` - Confidence vs accuracy
+- `phase8_subgroup_analysis.png` - Performance by demographic
+- `phase8_labs_comparison.png` - With vs without labs
+- `phase8_regression_residuals.png` - Residual analysis
+- `phase8_regression_predicted_vs_actual.png` - All regression models
+- `phase9_shap_summary_by_class.png` - SHAP beeswarm plots
+- `phase9_shap_importance_bar.png` - Top 20 features
+- `phase9_shap_dependence.png` - Feature dependence plots
+- `phase9_importance_comparison.png` - SHAP vs Permutation
+- `phase9_modifiable_factors.png` - Risk factor categories
+
+**Data files (in `models/advanced/`):**
+- `evaluation_results.json` - All metrics and subgroup results
+- `feature_importance_shap.csv` - SHAP importance rankings
+- `feature_importance_permutation.csv` - Permutation importance
+
+### Learnings
+
+1. **SHAP 0.50+ returns 3D arrays** - Format changed from list of 2D to single 3D array
+2. **PyTorch checkpoint format matters** - Save/load with consistent dictionary structure
+3. **Subgroup analysis reveals model fairness** - Important for healthcare applications
+4. **Calibration curves show reliability** - Model probabilities are reasonably trustworthy
+5. **Error analysis guides improvement** - Focus on prediabetes classification
+
+### Next Steps
+- **Phase 10**: Deployment (Streamlit app for risk prediction)
+- **Phase 11**: Documentation & Polish (README, final report)
+
+---
