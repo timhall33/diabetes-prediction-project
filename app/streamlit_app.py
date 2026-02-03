@@ -1008,16 +1008,371 @@ def page_risk_calculator():
         ### How to Use
         1. Select an example individual from the sidebar to see a demonstration
         2. Or enter your own values below for a custom prediction
-
-        The model uses NHANES survey data to predict diabetes risk based on:
-        - Demographics (age, gender)
-        - Body measurements (BMI, waist circumference)
-        - Blood pressure readings
-        - Dietary patterns
-        - Physical activity and lifestyle
-        - Medical history
-        - Laboratory values (optional)
         """)
+
+        # Custom input form
+        st.markdown("---")
+        st.subheader("Custom Prediction")
+        st.markdown("Enter your health metrics below to get a personalized diabetes risk prediction.")
+
+        user_data = {}
+
+        # Demographics
+        with st.expander("Demographics", expanded=True):
+            col1, col2 = st.columns(2)
+            with col1:
+                user_data["RIDAGEYR"] = st.number_input("Age (years)", min_value=18, max_value=80, value=45)
+            with col2:
+                gender = st.selectbox("Gender", ["Male", "Female"])
+                user_data["RIAGENDR"] = 1 if gender == "Male" else 2
+
+        # Anthropometric measurements
+        with st.expander("Body Measurements", expanded=True):
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                height_cm = st.number_input("Height (cm)", min_value=120.0, max_value=220.0, value=170.0, step=0.5)
+                user_data["BMXHT"] = height_cm
+            with col2:
+                weight_kg = st.number_input("Weight (kg)", min_value=30.0, max_value=250.0, value=75.0, step=0.5)
+                user_data["BMXWT"] = weight_kg
+            with col3:
+                waist_cm = st.number_input("Waist circumference (cm)", min_value=50.0, max_value=200.0, value=90.0, step=0.5)
+                user_data["BMXWAIST"] = waist_cm
+
+            # Calculate derived measurements
+            user_data["BMXBMI"] = weight_kg / ((height_cm / 100) ** 2)
+            user_data["WAIST_HEIGHT_RATIO"] = waist_cm / height_cm
+            st.caption(f"Calculated BMI: {user_data['BMXBMI']:.1f} kg/m² | Waist-to-Height Ratio: {user_data['WAIST_HEIGHT_RATIO']:.2f}")
+
+        # Weight history
+        with st.expander("Weight History"):
+            st.caption("Weight values in pounds (lbs)")
+            col1, col2 = st.columns(2)
+            with col1:
+                weight_10yr = st.number_input("Weight 10 years ago (lbs)", min_value=50.0, max_value=500.0, value=165.0, step=1.0)
+                user_data["WHD110"] = weight_10yr
+                weight_25 = st.number_input("Weight at age 25 (lbs)", min_value=50.0, max_value=500.0, value=155.0, step=1.0)
+                user_data["WHD120"] = weight_25
+            with col2:
+                max_weight = st.number_input("Heaviest weight ever (lbs)", min_value=50.0, max_value=600.0, value=180.0, step=1.0)
+                user_data["WHD140"] = max_weight
+                age_heaviest = st.number_input("Age at heaviest weight", min_value=18, max_value=80, value=40)
+                user_data["WHD130"] = age_heaviest
+
+            # Calculate derived weight features
+            LBS_TO_KG = 0.453592
+            user_data["WEIGHT_CHANGE_10YR"] = weight_kg - (weight_10yr * LBS_TO_KG)
+            user_data["WEIGHT_CHANGE_25"] = weight_kg - (weight_25 * LBS_TO_KG)
+            user_data["WEIGHT_FROM_MAX"] = (max_weight * LBS_TO_KG) - weight_kg
+
+        # Blood pressure
+        with st.expander("Blood Pressure", expanded=True):
+            st.caption("Enter up to 3 readings (leave as 0 if not available)")
+            col1, col2 = st.columns(2)
+            with col1:
+                sys1 = st.number_input("Systolic BP #1 (mmHg)", min_value=0, max_value=250, value=120)
+                sys2 = st.number_input("Systolic BP #2 (mmHg)", min_value=0, max_value=250, value=0)
+                sys3 = st.number_input("Systolic BP #3 (mmHg)", min_value=0, max_value=250, value=0)
+            with col2:
+                dia1 = st.number_input("Diastolic BP #1 (mmHg)", min_value=0, max_value=150, value=80)
+                dia2 = st.number_input("Diastolic BP #2 (mmHg)", min_value=0, max_value=150, value=0)
+                dia3 = st.number_input("Diastolic BP #3 (mmHg)", min_value=0, max_value=150, value=0)
+
+            # Store readings (use NaN for 0 values)
+            user_data["BPXSY1"] = sys1 if sys1 > 0 else np.nan
+            user_data["BPXSY2"] = sys2 if sys2 > 0 else np.nan
+            user_data["BPXSY3"] = sys3 if sys3 > 0 else np.nan
+            user_data["BPXDI1"] = dia1 if dia1 > 0 else np.nan
+            user_data["BPXDI2"] = dia2 if dia2 > 0 else np.nan
+            user_data["BPXDI3"] = dia3 if dia3 > 0 else np.nan
+
+            # Calculate averages from available readings
+            sys_readings = [x for x in [sys1, sys2, sys3] if x > 0]
+            dia_readings = [x for x in [dia1, dia2, dia3] if x > 0]
+            if sys_readings:
+                user_data["AVG_SYS_BP"] = np.mean(sys_readings)
+                user_data["BP_VARIABILITY"] = np.std(sys_readings) if len(sys_readings) > 1 else 0
+            else:
+                user_data["AVG_SYS_BP"] = np.nan
+                user_data["BP_VARIABILITY"] = np.nan
+            if dia_readings:
+                user_data["AVG_DIA_BP"] = np.mean(dia_readings)
+            else:
+                user_data["AVG_DIA_BP"] = np.nan
+            if sys_readings and dia_readings:
+                user_data["PULSE_PRESSURE"] = user_data["AVG_SYS_BP"] - user_data["AVG_DIA_BP"]
+                user_data["MAP"] = (user_data["AVG_SYS_BP"] + 2 * user_data["AVG_DIA_BP"]) / 3
+            else:
+                user_data["PULSE_PRESSURE"] = np.nan
+                user_data["MAP"] = np.nan
+
+        # Medical history
+        with st.expander("Medical History", expanded=True):
+            col1, col2 = st.columns(2)
+            with col1:
+                high_bp = st.selectbox("Ever told you have high blood pressure?", ["No", "Yes"])
+                user_data["BPQ020"] = 1 if high_bp == "Yes" else 2
+                high_chol = st.selectbox("Ever told you have high cholesterol?", ["No", "Yes"])
+                user_data["BPQ080"] = 1 if high_chol == "Yes" else 2
+                family_diabetes = st.selectbox("Family history of diabetes?", ["No", "Yes"])
+                user_data["MCQ300C"] = 1 if family_diabetes == "Yes" else 2
+            with col2:
+                cvd_history = st.selectbox("Any cardiovascular disease history?", ["No", "Yes"],
+                                           help="Heart failure, coronary disease, angina, heart attack, or stroke")
+                user_data["ANY_CVD"] = 1 if cvd_history == "Yes" else 0
+                user_data["MCQ160B"] = 1 if cvd_history == "Yes" else 2
+                user_data["MCQ160C"] = 2
+                user_data["MCQ160D"] = 2
+                user_data["MCQ160E"] = 2
+                user_data["MCQ160F"] = 2
+                shortness_breath = st.selectbox("Shortness of breath on stairs/inclines?", ["No", "Yes"])
+                user_data["CDQ010"] = 1 if shortness_breath == "Yes" else 2
+
+            # Additional medical history (defaults)
+            user_data["BPQ040A"] = np.nan
+            user_data["BPQ090D"] = np.nan
+            user_data["BPQ100D"] = np.nan
+            user_data["MCQ160L"] = 2
+            user_data["KIQ022"] = 2
+            user_data["MCQ220"] = 2
+
+        # Lifestyle
+        with st.expander("Lifestyle"):
+            col1, col2 = st.columns(2)
+            with col1:
+                st.markdown("**Physical Activity**")
+                vigorous_work = st.selectbox("Vigorous work activity?", ["No", "Yes"])
+                user_data["PAQ605"] = 1 if vigorous_work == "Yes" else 2
+                moderate_work = st.selectbox("Moderate work activity?", ["No", "Yes"])
+                user_data["PAQ620"] = 1 if moderate_work == "Yes" else 2
+                walk_bike = st.selectbox("Walk or bicycle for transport?", ["No", "Yes"])
+                user_data["PAQ635"] = 1 if walk_bike == "Yes" else 2
+                vigorous_rec = st.selectbox("Vigorous recreational activity?", ["No", "Yes"])
+                user_data["PAQ650"] = 1 if vigorous_rec == "Yes" else 2
+                moderate_rec = st.selectbox("Moderate recreational activity?", ["No", "Yes"])
+                user_data["PAQ665"] = 1 if moderate_rec == "Yes" else 2
+                sedentary_min = st.number_input("Sedentary time (minutes/day)", min_value=0, max_value=1440, value=360)
+                user_data["PAD680"] = sedentary_min
+
+            with col2:
+                st.markdown("**Sleep**")
+                sleep_weekday = st.number_input("Sleep hours (weekdays)", min_value=0.0, max_value=24.0, value=7.0, step=0.5)
+                user_data["SLD012"] = sleep_weekday
+                sleep_weekend = st.number_input("Sleep hours (weekends)", min_value=0.0, max_value=24.0, value=8.0, step=0.5)
+                user_data["SLD013"] = sleep_weekend
+                user_data["SLEEP_DURATION_DIFF"] = sleep_weekend - sleep_weekday
+                sleep_disorder = st.selectbox("Sleep disorder?", ["No", "Yes"])
+                user_data["SLQ050"] = 1 if sleep_disorder == "Yes" else 2
+
+                st.markdown("**Smoking**")
+                smoked_100 = st.selectbox("Ever smoked 100+ cigarettes?", ["No", "Yes"])
+                user_data["SMQ020"] = 1 if smoked_100 == "Yes" else 2
+                user_data["SMQ040"] = np.nan
+                user_data["SMD650"] = np.nan
+
+            # Sleep time defaults
+            user_data["SLQ310_HOURS"] = 6.5
+            user_data["SLQ330_HOURS"] = 7.5
+            user_data["WAKE_TIME_DIFF"] = 1.0
+
+            # Alcohol defaults
+            user_data["ALQ130"] = 1
+            user_data["ALQ121"] = 3
+
+        # Depression screening (PHQ-9)
+        with st.expander("Mental Health (PHQ-9 Depression Screening)"):
+            st.caption("Over the last 2 weeks, how often have you been bothered by: (0=Not at all, 1=Several days, 2=More than half the days, 3=Nearly every day)")
+            phq_items = [
+                ("DPQ010", "Little interest or pleasure in doing things"),
+                ("DPQ020", "Feeling down, depressed, or hopeless"),
+                ("DPQ030", "Trouble falling/staying asleep, or sleeping too much"),
+                ("DPQ040", "Feeling tired or having little energy"),
+                ("DPQ050", "Poor appetite or overeating"),
+                ("DPQ060", "Feeling bad about yourself"),
+                ("DPQ070", "Trouble concentrating"),
+                ("DPQ080", "Moving/speaking slowly or being fidgety"),
+                ("DPQ090", "Thoughts of self-harm"),
+            ]
+            phq_total = 0
+            for var, desc in phq_items:
+                val = st.slider(desc, min_value=0, max_value=3, value=0)
+                user_data[var] = val
+                phq_total += val
+            user_data["PHQ9_SCORE"] = phq_total
+            st.caption(f"PHQ-9 Total Score: {phq_total}")
+
+        # Dietary (simplified)
+        with st.expander("Dietary Patterns (Simplified)"):
+            st.caption("Estimates based on typical diet")
+            diet_quality = st.selectbox("How would you rate your diet?",
+                                        ["Excellent", "Very Good", "Good", "Fair", "Poor"])
+            diet_map = {"Excellent": 1, "Very Good": 2, "Good": 3, "Fair": 4, "Poor": 5}
+            user_data["DBQ700"] = diet_map[diet_quality]
+
+            col1, col2 = st.columns(2)
+            with col1:
+                meals_out = st.number_input("Meals not prepared at home (per week)", min_value=0, max_value=21, value=5)
+                user_data["DBD895"] = meals_out
+                fast_food = st.number_input("Fast food meals (per week)", min_value=0, max_value=21, value=2)
+                user_data["DBD900"] = fast_food
+            with col2:
+                daily_calories = st.number_input("Estimated daily calories", min_value=500, max_value=6000, value=2000)
+                user_data["DR1TKCAL"] = daily_calories
+
+            # Estimate other dietary values based on calories and diet quality
+            quality_factor = (6 - diet_map[diet_quality]) / 5  # 1.0 for excellent, 0.2 for poor
+            user_data["DR1TPROT"] = daily_calories * 0.15 / 4  # 15% protein
+            user_data["DR1TCARB"] = daily_calories * 0.50 / 4  # 50% carbs
+            user_data["DR1TSUGR"] = user_data["DR1TCARB"] * (0.2 + 0.15 * (1 - quality_factor))  # sugar varies by quality
+            user_data["DR1TFIBE"] = 15 + 20 * quality_factor  # 15-35g fiber
+            user_data["DR1TTFAT"] = daily_calories * 0.35 / 9  # 35% fat
+            user_data["DR1TSFAT"] = user_data["DR1TTFAT"] * (0.25 + 0.15 * (1 - quality_factor))  # sat fat
+            user_data["DR1TMFAT"] = user_data["DR1TTFAT"] * 0.4
+            user_data["DR1TPFAT"] = user_data["DR1TTFAT"] * 0.25
+            user_data["DR1TSODI"] = 2000 + 1500 * (1 - quality_factor)
+            user_data["DR1TCAFF"] = 150
+            user_data["DR1TALCO"] = 0
+            user_data["DR1_320Z"] = 800
+            user_data["DR1_330Z"] = 400
+            user_data["DR1BWATZ"] = 200
+            user_data["TOTAL_WATER"] = 1400
+            user_data["DBQ197"] = 3
+
+            # Calculate derived dietary ratios
+            user_data["SAT_FAT_PCT"] = (user_data["DR1TSFAT"] / user_data["DR1TTFAT"]) * 100 if user_data["DR1TTFAT"] > 0 else np.nan
+            user_data["CARB_FIBER_RATIO"] = user_data["DR1TCARB"] / user_data["DR1TFIBE"] if user_data["DR1TFIBE"] > 0 else np.nan
+            user_data["SUGAR_CARB_RATIO"] = (user_data["DR1TSUGR"] / user_data["DR1TCARB"]) * 100 if user_data["DR1TCARB"] > 0 else np.nan
+
+        # Laboratory values (optional)
+        if use_labs:
+            with st.expander("Laboratory Values (Optional)"):
+                st.caption("Leave as default if unknown - model can still make predictions with missing lab values")
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.markdown("**Lipids**")
+                    total_chol = st.number_input("Total Cholesterol (mg/dL)", min_value=0.0, max_value=500.0, value=0.0)
+                    user_data["LBXTC"] = total_chol if total_chol > 0 else np.nan
+                    hdl = st.number_input("HDL Cholesterol (mg/dL)", min_value=0.0, max_value=150.0, value=0.0)
+                    user_data["LBDHDD"] = hdl if hdl > 0 else np.nan
+                    ldl = st.number_input("LDL Cholesterol (mg/dL)", min_value=0.0, max_value=400.0, value=0.0)
+                    user_data["LBDLDL"] = ldl if ldl > 0 else np.nan
+                    trig = st.number_input("Triglycerides (mg/dL)", min_value=0.0, max_value=1000.0, value=0.0)
+                    user_data["LBXTR"] = trig if trig > 0 else np.nan
+
+                    # Calculate derived lipid values
+                    if hdl > 0 and trig > 0:
+                        user_data["TG_HDL_RATIO"] = trig / hdl
+                    else:
+                        user_data["TG_HDL_RATIO"] = np.nan
+                    if total_chol > 0 and hdl > 0:
+                        user_data["NON_HDL_CHOL"] = total_chol - hdl
+                    else:
+                        user_data["NON_HDL_CHOL"] = np.nan
+
+                with col2:
+                    st.markdown("**Kidney Function**")
+                    urine_alb = st.number_input("Urine Albumin (mg/L)", min_value=0.0, max_value=500.0, value=0.0)
+                    user_data["URXUMA"] = urine_alb if urine_alb > 0 else np.nan
+                    urine_cr = st.number_input("Urine Creatinine (mg/dL)", min_value=0.0, max_value=500.0, value=0.0)
+                    user_data["URXUCR"] = urine_cr if urine_cr > 0 else np.nan
+                    serum_cr = st.number_input("Serum Creatinine (mg/dL)", min_value=0.0, max_value=15.0, value=0.0, step=0.1)
+                    user_data["LBXSCR"] = serum_cr if serum_cr > 0 else np.nan
+
+                    if urine_alb > 0 and urine_cr > 0:
+                        user_data["ACR_RATIO"] = urine_alb / urine_cr
+                    else:
+                        user_data["ACR_RATIO"] = np.nan
+
+                with col3:
+                    st.markdown("**Liver & Blood**")
+                    alt = st.number_input("ALT (U/L)", min_value=0.0, max_value=500.0, value=0.0)
+                    user_data["LBXSATSI"] = alt if alt > 0 else np.nan
+                    ast = st.number_input("AST (U/L)", min_value=0.0, max_value=500.0, value=0.0)
+                    user_data["LBXSASSI"] = ast if ast > 0 else np.nan
+                    ggt = st.number_input("GGT (U/L)", min_value=0.0, max_value=500.0, value=0.0)
+                    user_data["LBXSGTSI"] = ggt if ggt > 0 else np.nan
+                    wbc = st.number_input("WBC (1000 cells/uL)", min_value=0.0, max_value=30.0, value=0.0, step=0.1)
+                    user_data["LBXWBCSI"] = wbc if wbc > 0 else np.nan
+                    hct = st.number_input("Hematocrit (%)", min_value=0.0, max_value=60.0, value=0.0)
+                    user_data["LBXHCT"] = hct if hct > 0 else np.nan
+                    hgb = st.number_input("Hemoglobin (g/dL)", min_value=0.0, max_value=25.0, value=0.0, step=0.1)
+                    user_data["LBXHGB"] = hgb if hgb > 0 else np.nan
+                    plt_count = st.number_input("Platelets (1000 cells/uL)", min_value=0.0, max_value=800.0, value=0.0)
+                    user_data["LBXPLTSI"] = plt_count if plt_count > 0 else np.nan
+        else:
+            # Set lab values to NaN when not using labs
+            for lab in LAB_FEATURES:
+                user_data[lab] = np.nan
+            user_data["TG_HDL_RATIO"] = np.nan
+            user_data["NON_HDL_CHOL"] = np.nan
+            user_data["ACR_RATIO"] = np.nan
+
+        # Prediction button
+        st.markdown("---")
+        if st.button("Calculate My Diabetes Risk", type="primary", use_container_width=True):
+            with st.spinner("Calculating risk..."):
+                result = predict_diabetes_risk(models, user_data, feature_order, use_labs)
+
+            # Display results
+            st.header("Your Prediction Results")
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                colors = {0: "green", 1: "orange", 2: "red"}
+                color = colors[result['predicted_class']]
+                st.markdown(f"### Predicted: <span style='color:{color}'>{result['class_label']}</span>",
+                           unsafe_allow_html=True)
+                st.metric("Confidence", f"{result['confidence']*100:.1f}%")
+
+            with col2:
+                st.markdown("### Class Probabilities")
+                for cls, prob in result['probabilities'].items():
+                    st.progress(prob, text=f"{cls}: {prob*100:.1f}%")
+
+            with col3:
+                if 'hba1c_prediction' in result:
+                    st.markdown("### Predicted HbA1c")
+                    st.metric("HbA1c", f"{result['hba1c_prediction']:.2f}%")
+                    st.caption(f"Interpretation: {result['hba1c_interpretation']}")
+
+            # Comparison with and without labs
+            if use_labs:
+                st.markdown("---")
+                st.subheader("Comparison: With Labs vs Without Labs")
+
+                result_no_labs = predict_diabetes_risk(models, user_data, feature_order, use_labs=False)
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown("**With Laboratory Values**")
+                    st.write(f"Prediction: {result['class_label']}")
+                    st.write(f"Confidence: {result['confidence']*100:.1f}%")
+
+                with col2:
+                    st.markdown("**Without Laboratory Values**")
+                    st.write(f"Prediction: {result_no_labs['class_label']}")
+                    st.write(f"Confidence: {result_no_labs['confidence']*100:.1f}%")
+
+                if result['predicted_class'] != result_no_labs['predicted_class']:
+                    st.warning("Lab values changed the prediction! This demonstrates the value of blood tests in risk assessment.")
+
+            # Key metrics summary
+            st.markdown("---")
+            st.subheader("Your Key Metrics")
+            metrics_col1, metrics_col2, metrics_col3, metrics_col4 = st.columns(4)
+            with metrics_col1:
+                bmi_color = "normal" if user_data["BMXBMI"] < 25 else ("inverse" if user_data["BMXBMI"] >= 30 else "off")
+                st.metric("BMI", f"{user_data['BMXBMI']:.1f}", delta=None)
+            with metrics_col2:
+                st.metric("Waist/Height", f"{user_data['WAIST_HEIGHT_RATIO']:.2f}")
+            with metrics_col3:
+                if not pd.isna(user_data.get("AVG_SYS_BP")):
+                    st.metric("Avg Systolic BP", f"{user_data['AVG_SYS_BP']:.0f}")
+            with metrics_col4:
+                st.metric("PHQ-9 Score", f"{user_data['PHQ9_SCORE']}")
+
+            st.info("**Disclaimer**: This is a screening tool, not a diagnostic device. Always consult a healthcare provider for medical decisions.")
 
 
 def page_test_cases():

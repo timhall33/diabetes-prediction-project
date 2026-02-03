@@ -1089,6 +1089,50 @@ Comprehensive evaluation of all trained models with detailed error analysis, sub
 
 ---
 
+## [2026-02-03] - Phase 10.1: Custom Input Feature for Streamlit App
+
+### Objective
+Add custom input functionality to the Risk Calculator page, allowing users to enter their own health metrics for personalized diabetes risk predictions.
+
+### Implementation
+
+**Updated file:**
+- `app/streamlit_app.py` - Added comprehensive custom input form
+
+**New Features:**
+| Section | Inputs |
+|---------|--------|
+| Demographics | Age, gender |
+| Body Measurements | Height, weight, waist circumference (auto-calculates BMI, waist-to-height ratio) |
+| Weight History | Weight at 10 years ago, age 25, heaviest weight, age at heaviest |
+| Blood Pressure | Up to 3 systolic/diastolic readings (auto-calculates averages, pulse pressure, MAP) |
+| Medical History | High BP, high cholesterol, family history diabetes, CVD history, shortness of breath |
+| Lifestyle | Physical activity (5 types), sedentary time, sleep hours, sleep disorder, smoking |
+| Mental Health | Full PHQ-9 depression screening (9 questions with auto-calculated score) |
+| Dietary Patterns | Diet quality rating, meals out, fast food, calories (estimates other nutrients) |
+| Laboratory Values | Optional: lipids, kidney function, liver enzymes, blood counts |
+
+**Key Design Decisions:**
+- Used expandable sections to organize inputs without overwhelming users
+- Auto-calculate derived features (BMI, ratios, averages) to match training data
+- Lab values are optional - LightGBM handles NaN natively
+- Simplified dietary input with quality-based nutrient estimation
+- Shows with-labs vs without-labs comparison after prediction
+
+### Results
+Users can now:
+1. Select a predefined test case from the sidebar, OR
+2. Enter their own health metrics for a custom prediction
+
+The custom input form mirrors the features used during model training, ensuring accurate predictions.
+
+### Learnings
+1. Streamlit expanders help organize complex forms
+2. Auto-calculating derived features improves user experience
+3. Sensible defaults and optional fields reduce input burden
+
+---
+
 ## [2026-02-03] - Phase 10: Deployment (Streamlit App)
 
 ### Objective
