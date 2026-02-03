@@ -1088,3 +1088,90 @@ Comprehensive evaluation of all trained models with detailed error analysis, sub
 - **Phase 11**: Documentation & Polish (README, final report)
 
 ---
+
+## [2026-02-03] - Phase 10: Deployment (Streamlit App)
+
+### Objective
+Create an interactive Streamlit application for diabetes risk prediction with comprehensive test cases demonstrating the full capability of the trained models.
+
+### Implementation
+
+**Files Created:**
+- `app/streamlit_app.py` - Multi-page Streamlit application
+- `app/requirements.txt` - App-specific dependencies
+
+**App Features:**
+
+| Page | Description |
+|------|-------------|
+| **Risk Calculator** | Main prediction interface with example individual selection |
+| **Example Test Cases** | All 6 test cases with predictions (with/without labs) |
+| **Compare Scenarios** | Side-by-side comparison of different individuals |
+| **Population Insights** | Key findings from NHANES analysis |
+| **Model Information** | Technical details, performance metrics, limitations |
+
+### Test Cases (Example Individuals)
+
+Created 6 comprehensive test cases that fully demonstrate the predictor's capabilities:
+
+| Test Case | Description | Expected Outcome | Key Factors |
+|-----------|-------------|------------------|-------------|
+| **Low Risk - Healthy Adult** | 32yo female, active, healthy BMI (22), no family history | No Diabetes | Young, healthy weight, active, excellent labs |
+| **High Risk - Metabolic Syndrome** | 62yo male, obese (BMI 34), hypertension, dyslipidemia | Diabetes | Age, obesity, high TG/HDL (5.0), family history |
+| **Borderline - Prediabetes Risk** | 48yo female, overweight (BMI 28), borderline labs | Prediabetes | Middle age, overweight, borderline lipids |
+| **Lifestyle Matters - Active Despite Age** | 58yo male, very active, excellent diet, normal BMI (24) | No Diabetes | Older age BUT excellent lifestyle compensates |
+| **Young but High Risk - Poor Lifestyle** | 28yo male, obese (BMI 35.5), sedentary, poor diet | Prediabetes | Young age BUT poor lifestyle increases risk |
+| **Labs Critical - Hidden Risk** | 45yo male, normal BMI, BUT very poor labs (TG/HDL 6.5) | Diabetes | Labs reveal hidden metabolic dysfunction |
+
+### Model Integration
+
+**Features:**
+- Uses LightGBM models (best performing) for classification and regression
+- Supports both with-labs (109 features) and without-labs (92 features) predictions
+- Displays predicted class, probabilities, and HbA1c prediction
+- Shows comparison between with-labs and without-labs predictions
+- Loads feature order from processed data to ensure correct alignment
+
+**Prediction Examples:**
+
+| Individual | With Labs Prediction | Without Labs Prediction | HbA1c |
+|------------|---------------------|------------------------|-------|
+| Low Risk (32yo healthy) | Prediabetes (52%) | Prediabetes | 5.47% |
+| High Risk (62yo metabolic) | Diabetes (63%) | Diabetes | 6.69% |
+
+### Key Insights Demonstrated
+
+1. **Age is a strong predictor** - But lifestyle can compensate
+2. **Labs add significant value** - ~10% F1 improvement with blood tests
+3. **Hidden risks exist** - Some individuals appear healthy but have poor labs
+4. **Modifiable factors matter** - Weight, diet, activity are actionable
+5. **Model differentiates well** - Clear separation between risk profiles
+
+### How to Run
+
+```bash
+# Install dependencies
+pip install -r app/requirements.txt
+
+# Run the app
+streamlit run app/streamlit_app.py
+```
+
+### Technical Details
+
+- Uses cached model and data loading for performance
+- Feature order loaded from parquet files to match training data
+- Handles missing values (NaN) correctly (LightGBM native support)
+- Derived features calculated in test cases (same as training)
+
+### Learnings
+
+1. **Feature alignment is critical** - Models don't store feature names with data; must preserve order
+2. **Test cases should span the feature space** - Cover low/high risk, young/old, with/without labs
+3. **Probability calibration matters** - Users need to understand confidence levels
+4. **Comparison view is valuable** - Showing with/without labs difference is educational
+
+### Next Steps
+- **Phase 11**: Documentation & Polish (README, final report)
+
+---
