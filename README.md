@@ -321,8 +321,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Tim Hall**
 
-- GitHub: [@yourusername](https://github.com/timhall33)
-- LinkedIn: [Your LinkedIn](https://www.linkedin.com/in/timothy-hall-4d7)
+- GitHub: [@timhall33](https://github.com/timhall33)
+- LinkedIn: [timothy-hall](https://www.linkedin.com/in/timothy-hall-4d7)
 
 ---
 
