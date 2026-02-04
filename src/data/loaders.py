@@ -42,7 +42,7 @@ def load_xpt_file(filepath: Union[str, Path]) -> pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        Loaded data with SEQN as index.
+        Loaded data. (SEQN is preserved as a regular column.)
     """
     df, meta = pyreadstat.read_xport(str(filepath))
     return df

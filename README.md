@@ -149,6 +149,15 @@ Start with the notebooks in order:
 6. `07_advanced_models.ipynb` - LightGBM and MLP training
 7. `08_evaluation_and_interpretation.ipynb` - SHAP analysis
 
+## Reproducibility
+
+The app depends on generated artifacts in `data/processed/` and `models/advanced/` (both gitignored). To reproduce everything from scratch:
+
+1. Complete the Quick Start setup and download steps.
+2. Run the notebooks in order (`02` through `08`) to regenerate processed datasets, train models, and create evaluation artifacts.
+3. Confirm the following paths exist before running the app:
+`data/processed/` and `models/advanced/`
+
 ## Repository Structure
 
 ```

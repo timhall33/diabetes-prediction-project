@@ -308,6 +308,7 @@ def download_nhanes_data(
                     "file_id": file_id,
                     "status": "not_available",
                     "description": file_info["description"],
+                    "required": file_info["required"],
                 })
                 continue
 
@@ -330,6 +331,7 @@ def download_nhanes_data(
                             "status": "skipped",
                             "path": str(dest_path),
                             "description": file_info["description"],
+                            "required": file_info["required"],
                         })
                         continue
 
@@ -346,6 +348,7 @@ def download_nhanes_data(
             download_result["file_id"] = file_id
             download_result["description"] = file_info["description"]
             download_result["category"] = file_info["category"]
+            download_result["required"] = file_info["required"]
 
             if download_result["success"]:
                 results["summary"]["success"] += 1
