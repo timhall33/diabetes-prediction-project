@@ -5,6 +5,7 @@
 ![LightGBM](https://img.shields.io/badge/LightGBM-4.0+-green)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red?logo=pytorch&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-brightgreen)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://timhall33-diabetes-prediction-project-appstreamlit-app-wpfkgp.streamlit.app/)
 
 A comprehensive machine learning project that predicts diabetes status and risk using NHANES (National Health and Nutrition Examination Survey) data. This project demonstrates the complete data science lifecycle from raw data acquisition through model deployment.
 
@@ -259,12 +260,15 @@ diabetes_prediction_project/
 
 ### Streamlit Application
 
+**[Launch the Live App](https://timhall33-diabetes-prediction-project-appstreamlit-app-wpfkgp.streamlit.app/)**
+
 The interactive web app allows you to:
 - Enter your own health metrics for a personalized risk prediction
 - View example test cases spanning low to high risk profiles
 - Compare predictions with and without laboratory values
 - Explore population-level insights from NHANES data
 
+Or run locally:
 ```bash
 streamlit run app/streamlit_app.py
 ```
