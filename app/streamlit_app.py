@@ -29,6 +29,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 MODELS_DIR = PROJECT_ROOT / "models" / "advanced"
 DATA_DIR = PROJECT_ROOT / "data" / "processed"
 REPORTS_DIR = PROJECT_ROOT / "reports"
+FEATURE_ORDER_PATH = Path(__file__).parent / "feature_order.json"
 
 
 # =============================================================================
@@ -73,22 +74,11 @@ def load_feature_info():
 
 @st.cache_data
 def load_feature_order():
-    """Load feature order from the processed data files."""
-    feature_order = {}
-
-    # Load from parquet files to get exact feature order used during training
-    with_labs_path = DATA_DIR / "X_with_labs_minimal.parquet"
-    without_labs_path = DATA_DIR / "X_without_labs_minimal.parquet"
-
-    if with_labs_path.exists():
-        df = pd.read_parquet(with_labs_path)
-        feature_order['with_labs'] = list(df.columns)
-
-    if without_labs_path.exists():
-        df = pd.read_parquet(without_labs_path)
-        feature_order['without_labs'] = list(df.columns)
-
-    return feature_order
+    """Load feature order from the tracked JSON artifact."""
+    if FEATURE_ORDER_PATH.exists():
+        with open(FEATURE_ORDER_PATH) as f:
+            return json.load(f)
+    return {}
 
 
 # =============================================================================
@@ -870,7 +860,7 @@ def predict_diabetes_risk(models: Dict, user_data: Dict, feature_order: Dict, us
         return {"error": f"Model not found: {cls_model_key}"}
 
     if feature_key not in feature_order:
-        return {"error": f"Feature order not found: {feature_key}"}
+        return {"error": f"Feature order not found: {feature_key}. Ensure app/feature_order.json is present."}
 
     cls_model = models[cls_model_key]
     reg_model = models.get(reg_model_key)
@@ -932,7 +922,7 @@ def page_risk_calculator():
         return
 
     if not feature_order:
-        st.error("Feature order not found. Please ensure processed data exists in data/processed/")
+        st.error("Feature order not found. Please ensure app/feature_order.json is present.")
         return
 
     # Sidebar options
@@ -1391,7 +1381,7 @@ def page_test_cases():
         return
 
     if not feature_order:
-        st.error("Feature order not found.")
+        st.error("Feature order not found. Please ensure app/feature_order.json is present.")
         return
 
     test_cases = get_test_cases()
@@ -1574,7 +1564,7 @@ def page_compare_scenarios():
         return
 
     if not feature_order:
-        st.error("Feature order not found.")
+        st.error("Feature order not found. Please ensure app/feature_order.json is present.")
         return
 
     st.markdown("### Select two scenarios to compare")

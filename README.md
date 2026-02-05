@@ -14,26 +14,27 @@ A comprehensive machine learning project that predicts diabetes status and risk 
 
 ## Key Results
 
-### Classification Performance (3-class: No Diabetes / Prediabetes / Diabetes)
+### Classification Performance (Test set, 3-class: No Diabetes / Prediabetes / Diabetes)
 
-| Model | F1 Macro | ROC AUC | Accuracy |
-|-------|----------|---------|----------|
+| Model | F1 Macro | ROC AUC (OvR) | Accuracy |
+|-------|----------|---------------|----------|
 | **LightGBM (with labs)** | **0.612** | **0.816** | **63.0%** |
 | LightGBM (without labs) | 0.549 | 0.756 | 56.5% |
-| PyTorch Neural Network | 0.562 | 0.759 | 57.2% |
-| Logistic Regression (baseline) | 0.544 | 0.749 | 59.0% |
+| MLP (with labs) | 0.550 | 0.746 | 59.0% |
+| MLP (without labs) | 0.535 | 0.735 | 56.9% |
 
-### Regression Performance (HbA1c Prediction)
+### Regression Performance (HbA1c Prediction, Test set)
 
 | Model | RMSE | R² | MAE |
 |-------|------|-----|-----|
 | **LightGBM (with labs)** | **0.988** | **0.301** | **0.567** |
 | LightGBM (without labs) | 1.080 | 0.164 | 0.609 |
-| Ridge Regression (baseline) | 1.167 | 0.228 | - |
+| MLP (with labs) | 1.100 | 0.133 | 0.649 |
+| MLP (without labs) | 1.163 | 0.031 | 0.682 |
 
 ### Key Finding
 
-**Laboratory values improve classification by ~10% F1** but the model remains clinically useful without them, enabling community-based screening without blood tests.
+**Laboratory values improve classification by ~0.06 macro F1 (≈6 points)** while the model remains clinically useful without labs, enabling community-based screening without blood tests.
 
 ## Dataset
 
@@ -132,13 +133,25 @@ pip install -r requirements.txt
 python -m src.data.download --years 2015-2016 2017-2018
 ```
 
-### 4. Run the Streamlit app
+### 4. Generate features and models
+
+Run the notebooks in order to create `data/processed/` and `models/advanced/` artifacts:
+
+1. `02_data_exploration.ipynb`
+2. `03_data_cleaning.ipynb`
+3. `04_feature_engineering.ipynb`
+4. `05_eda_visualizations.ipynb`
+5. `06_baseline_models.ipynb`
+6. `07_advanced_models.ipynb`
+7. `08_evaluation_and_interpretation.ipynb`
+
+### 5. Run the Streamlit app
 
 ```bash
 streamlit run app/streamlit_app.py
 ```
 
-### 5. Explore the notebooks
+### 6. Explore the notebooks (optional)
 
 Start with the notebooks in order:
 1. `02_data_exploration.ipynb` - Data profiling and target definition
@@ -151,7 +164,9 @@ Start with the notebooks in order:
 
 ## Reproducibility
 
-The app depends on generated artifacts in `data/processed/` and `models/advanced/` (both gitignored). To reproduce everything from scratch:
+This repository does **not** include raw data, processed datasets, or trained models. The app expects locally generated artifacts in `data/processed/` and `models/advanced/`.
+
+To reproduce everything from scratch:
 
 1. Complete the Quick Start setup and download steps.
 2. Run the notebooks in order (`02` through `08`) to regenerate processed datasets, train models, and create evaluation artifacts.
@@ -164,6 +179,7 @@ The app depends on generated artifacts in `data/processed/` and `models/advanced
 diabetes_prediction_project/
 ├── app/
 │   ├── streamlit_app.py          # Interactive web application
+│   ├── feature_order.json        # Tracked feature order for inference
 │   └── requirements.txt          # App dependencies
 │
 ├── config/
@@ -191,6 +207,7 @@ diabetes_prediction_project/
 │
 ├── reports/
 │   ├── figures/                  # All visualizations (60+ figures)
+│   ├── metrics/                  # Tracked evaluation summaries
 │   └── final_report.md           # Comprehensive project report
 │
 ├── src/
@@ -201,7 +218,7 @@ diabetes_prediction_project/
 │   └── utils/                    # Helper utilities
 │
 ├── CHANGELOG.md                  # Detailed project history
-├── PRD.md                        # Product requirements document
+├── prd.md                        # Product requirements document
 ├── requirements.txt              # Python dependencies
 └── environment.yml               # Conda environment
 ```
@@ -260,6 +277,10 @@ streamlit run app/streamlit_app.py
 | Metabolic Syndrome | 62 | 34 | Diabetes (63%) | Diabetes |
 | Active Senior | 58 | 24 | No Diabetes | No Diabetes |
 
+## Disclaimer
+
+This project is for educational and research purposes only and does not provide medical advice, diagnosis, or treatment. Always consult a qualified healthcare professional for medical guidance.
+
 ## Actionable Insights
 
 ### Top Modifiable Risk Factors
@@ -282,7 +303,7 @@ Based on SHAP analysis, the most impactful factors you can change:
 ## Documentation
 
 - **[CHANGELOG.md](CHANGELOG.md)** - Detailed project history with decisions and learnings
-- **[PRD.md](PRD.md)** - Product requirements document with full specifications
+- **[prd.md](prd.md)** - Product requirements document with full specifications
 - **[Final Report](reports/final_report.md)** - Comprehensive analysis and findings
 
 ## Technical Stack

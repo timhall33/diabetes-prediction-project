@@ -111,20 +111,19 @@ data/processed/
 # MLflow tracking (local runs)
 mlruns/
 
-# Model artifacts (large binary files)
-models/**/*.pkl
-models/**/*.joblib
-models/**/*.h5
-models/**/*.pt
-models/**/*.pth
+# Model artifacts (local)
+models/
 
 # Optuna studies
 *.db
 
-# Large files
-*.csv
-*.parquet
-*.feather
+# Large data artifacts (scoped)
+data/**/*.csv
+data/**/*.parquet
+data/**/*.feather
+
+# Local app/editor config
+.claude/
 
 # Secrets
 .env

@@ -27,88 +27,51 @@ nhanes-diabetes-prediction/
 ├── requirements.txt             # Python dependencies with versions
 ├── environment.yml              # Conda environment (alternative)
 ├── .gitignore                   # Standard Python + data science ignores
-├── pyproject.toml               # Project metadata
 │
 ├── config/
 │   ├── config.yaml              # Central configuration file
-│   ├── feature_definitions.yaml # Feature names, mappings, transformations
-│   └── model_configs/           # Hyperparameter configurations per model
+│   └── file_mappings.yaml       # NHANES file name mappings
 │
 ├── data/
 │   ├── raw/                     # Original XPT files (gitignored)
-│   │   └── {year}/              # Organized by survey year
 │   ├── interim/                 # Intermediate processing stages
 │   ├── processed/               # Final cleaned datasets
 │   └── data_dictionary.md       # Documentation of all variables
 │
 ├── notebooks/
-│   ├── 01_data_acquisition.ipynb
 │   ├── 02_data_exploration.ipynb
 │   ├── 03_data_cleaning.ipynb
 │   ├── 04_feature_engineering.ipynb
 │   ├── 05_eda_visualizations.ipynb
 │   ├── 06_baseline_models.ipynb
-│   ├── 07_model_training_classification.ipynb
-│   ├── 08_model_training_regression.ipynb
-│   ├── 09_model_evaluation.ipynb
-│   ├── 10_feature_importance.ipynb
-│   └── 11_final_analysis.ipynb
+│   ├── 07_advanced_models.ipynb
+│   ├── 07a_deep_learning_pytorch.ipynb
+│   └── 08_evaluation_and_interpretation.ipynb
 │
 ├── src/
-│   ├── __init__.py
-│   ├── data/
-│   │   ├── __init__.py
-│   │   ├── download.py          # NHANES data acquisition
-│   │   ├── loaders.py           # XPT file loading utilities
-│   │   ├── cleaners.py          # Data cleaning functions
-│   │   └── validators.py        # Data validation checks
-│   │
-│   ├── features/
-│   │   ├── __init__.py
-│   │   ├── builders.py          # Feature engineering pipeline
-│   │   ├── transformers.py      # Custom sklearn transformers
-│   │   └── selectors.py         # Feature selection methods
-│   │
-│   ├── models/
-│   │   ├── __init__.py
-│   │   ├── train.py             # Training orchestration
-│   │   ├── evaluate.py          # Evaluation metrics & comparisons
-│   │   ├── tune.py              # Hyperparameter optimization
-│   │   └── registry.py          # Model versioning/tracking
-│   │
-│   ├── visualization/
-│   │   ├── __init__.py
-│   │   ├── eda.py               # EDA visualizations
-│   │   ├── evaluation.py        # Model performance plots
-│   │   └── interpretation.py    # SHAP, feature importance plots
-│   │
-│   └── utils/
-│       ├── __init__.py
-│       ├── logging.py           # Logging configuration
-│       └── helpers.py           # Miscellaneous utilities
+│   ├── data/                    # Downloading, loading, cleaning, validation
+│   ├── features/                # Feature engineering pipeline
+│   ├── models/                  # Training and evaluation utilities
+│   ├── visualization/           # EDA visualization helpers
+│   └── utils/                   # Helper utilities
 │
-├── models/                      # Saved model artifacts
-│   ├── classification/
-│   │   ├── with_labs/
-│   │   └── without_labs/
-│   └── regression/
-│       ├── with_labs/
-│       └── without_labs/
+├── models/                      # Local model artifacts (gitignored)
 │
 ├── reports/
 │   ├── figures/                 # Publication-ready visualizations
-│   ├── model_comparison.md      # Model performance summary
+│   ├── metrics/                 # Tracked evaluation summaries
 │   └── final_report.md          # Complete project writeup
 │
 ├── app/                         # Deployment artifacts
 │   ├── streamlit_app.py         # Interactive web app
-│   ├── api/                     # REST API (FastAPI)
+│   ├── feature_order.json       # Tracked feature order for inference
 │   └── requirements.txt         # App-specific dependencies
 │
 └── tests/
-    ├── test_data.py
-    ├── test_features.py
-    └── test_models.py
+    ├── __init__.py
+    ├── test_cleaners.py
+    ├── test_feature_sets.py
+    └── test_target_leakage.py
 ```
 
 ### 0.2 Development Environment

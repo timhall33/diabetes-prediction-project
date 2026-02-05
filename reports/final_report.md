@@ -301,7 +301,7 @@ Removing laboratory features impacts performance:
 
 ![Labs Comparison](figures/phase8_labs_comparison.png)
 
-**Clinical Implication**: The without-labs model loses ~10% F1 but remains clinically useful for community screening where blood tests aren't available.
+**Clinical Implication**: The without-labs model loses ~0.06 macro F1 (≈6 points) but remains clinically useful for community screening where blood tests aren't available.
 
 ### Subgroup Analysis
 
@@ -401,7 +401,7 @@ Based on SHAP analysis, the top **modifiable** factors:
 
 2. **Prediabetes is difficult to classify**: The 3-class problem is inherently challenging because prediabetes represents a transitional state with overlapping feature distributions with both healthy and diabetic individuals.
 
-3. **Laboratory values matter but aren't essential**: While labs improve F1 by ~10%, the without-labs model still provides clinically useful predictions (AUC = 0.756), enabling community-based screening.
+3. **Laboratory values matter but aren't essential**: While labs improve macro F1 by ~0.06 (≈6 points), the without-labs model still provides clinically useful predictions (AUC = 0.756), enabling community-based screening.
 
 4. **Age dominates predictions**: Age is the strongest predictor, reflecting the cumulative nature of metabolic dysfunction. However, multiple modifiable factors rank highly, providing intervention targets.
 
