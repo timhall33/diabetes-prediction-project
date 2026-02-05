@@ -111,8 +111,10 @@ data/processed/
 # MLflow tracking (local runs)
 mlruns/
 
-# Model artifacts (local)
-models/
+# Model artifacts - allow joblib files for deployment
+models/**/*.pkl
+models/**/*.h5
+!models/**/*.joblib
 
 # Optuna studies
 *.db
